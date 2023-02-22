@@ -4,7 +4,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
   root: '.',
-  base: './',
+  base: '/Formit-Forma/',
   build: {
     outDir: './v0_1'
   },
