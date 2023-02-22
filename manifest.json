@@ -2,6 +2,6 @@
     "PluginName": "Formit <> Forma",
     "PluginDescription": "Connection between Formit and Forma environment",
     "PluginType": "Panel",
-    "Panel": "PLUGINLOCATION/dist/index.html",
-    "PanelIcon": "PLUGINLOCATION/dist/vite.png"
+    "Panel": "PLUGINLOCATION/index.html",
+    "PanelIcon": "PLUGINLOCATION/vite.png"
 }
