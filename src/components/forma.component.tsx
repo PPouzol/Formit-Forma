@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 
+import FormaService from "../services/forma.service";
 import AuthService from "../services/auth.service";
 
 type Props = {};
@@ -18,7 +19,6 @@ type State = {
 export default class Login extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.handleLogin = this.handleLogin.bind(this);
 
     this.state = {
       redirect: null,
@@ -26,14 +26,6 @@ export default class Login extends Component<Props, State> {
       password: "",
       loading: false,
       message: ""
-    };
-  }
-
-  componentDidMount() {
-    const currentUser = AuthService.getCurrentUser();
-
-    if (currentUser) {
-      this.setState({ redirect: "/profile" });
     };
   }
 
@@ -48,53 +40,25 @@ export default class Login extends Component<Props, State> {
     });
   }
 
-  handleLogin(formValue: { username: string; password: string }) {
-    const { username, password } = formValue;
-
+  handleFetch(formValue: { authToken: string }) {
     this.setState({
       message: "",
       loading: true
     });
-
-
-    AuthService.login(username, password)
-    .then(
-      () => {
-        this.setState({
-          redirect: "/profile"
-        });
-      },
-      (error: { response: { data: { message: any; }; }; message: any; toString: () => any; }) => {
-        const resMessage =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-
-        this.setState({
-          loading: false,
-          message: resMessage
-        });
-      }
-    )
-    .catch((error) => {
-      console.error(error)
+  }
+  
+  handlePush(formValue: { authToken: string }) {
+    this.setState({
+      message: "",
+      loading: true
     });
   }
 
   render() {
-    debugger
-    
-    if (this.state.redirect) {
-      return <Navigate to={this.state.redirect} />
-    }
-
     const { loading, message } = this.state;
 
     const initialValues = {
-      username: "",
-      password: "",
+      authToken: ""
     };
 
     return (
@@ -109,7 +73,7 @@ export default class Login extends Component<Props, State> {
           <Formik
             initialValues={initialValues}
             validationSchema={this.validationSchema}
-            onSubmit={this.handleLogin}
+            onSubmit={this.handlePush}
           >
             <Form>
               <div className="form-group">

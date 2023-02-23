@@ -34,7 +34,6 @@ class App extends Component<Props, State> {
 
     return (
         <div className="container mt-3">
-          <div id="toto"></div>
           <Routes>
             <Route path="/" element={<Login />} />
           </Routes>
