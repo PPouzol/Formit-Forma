@@ -1,53 +1,29 @@
 import { Component } from "react";
-import { Navigate } from "react-router-dom";
-import { Formik, Field, Form, ErrorMessage } from "formik";
-import * as Yup from "yup";
-
-import FormaService from "../services/forma.service";
-import AuthService from "../services/auth.service";
 
 type Props = {};
 
 type State = {
   redirect: string | null,
-  username: string,
-  password: string,
-  loading: boolean,
-  message: string
+  message: string,
+  loading: boolean
 };
-
-export default class Login extends Component<Props, State> {
+export default class FormitForma extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-
-    this.state = {
-      redirect: null,
-      username: "",
-      password: "",
-      loading: false,
-      message: ""
-    };
   }
 
   componentWillUnmount() {
     window.location.reload();
   }
 
-  validationSchema() {
-    return Yup.object().shape({
-      username: Yup.string().required("This field is required!"),
-      password: Yup.string().required("This field is required!"),
-    });
-  }
-
-  handleFetch(formValue: { authToken: string }) {
+  handleFetch() {
     this.setState({
       message: "",
       loading: true
     });
   }
   
-  handlePush(formValue: { authToken: string }) {
+  handlePush() {
     this.setState({
       message: "",
       loading: true
@@ -69,51 +45,7 @@ export default class Login extends Component<Props, State> {
             alt="profile-img"
             className="profile-img-card"
           />
-
-          <Formik
-            initialValues={initialValues}
-            validationSchema={this.validationSchema}
-            onSubmit={this.handlePush}
-          >
-            <Form>
-              <div className="form-group">
-                <label htmlFor="username">Username</label>
-                <Field name="username" type="text" className="form-control" />
-                <ErrorMessage
-                  name="username"
-                  component="div"
-                  className="alert alert-danger"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <Field name="password" type="password" className="form-control" />
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="alert alert-danger"
-                />
-              </div>
-
-              <div className="form-group">
-                <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-                  {loading && (
-                    <span className="spinner-border spinner-border-sm"></span>
-                  )}
-                  <span>Login</span>
-                </button>
-              </div>
-
-              {message && (
-                <div className="form-group">
-                  <div className="alert alert-danger" role="alert">
-                    {message}
-                  </div>
-                </div>
-              )}
-            </Form>
-          </Formik>
+          <h3>Forma component</h3>
         </div>
       </div>
     );
