@@ -6,10 +6,12 @@ import './index.css'
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
-
-var content = 
-  <HashRouter>
-    <App />
-  </HashRouter>;
-
-root.render(content);
+root.render(
+  <>
+    <div id="MainControls">
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </div>
+  </>
+);
