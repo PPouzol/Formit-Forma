@@ -1,36 +1,28 @@
+'use strict';
 import { Component } from "react";
+import pluginIndex from "../../index.js";
 
 type Props = {};
 
 type State = {
-  redirect: string | null
+  loggedIn: boolean
 };
+
 export default class Login extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
+    
+    this.state = {
+      loggedIn: false
+    };
   }
 
-  componentDidMount() {
-    debugger
-    window.location.replace("https://app.spacemaker.ai/auth/login?rd=https%3A%2F%2Fapp.spacemaker.ai%2Fprojects");
-  }
-
-  componentWillUnmount() {
-    window.location.reload();
+  static login(): ((this: GlobalEventHandlers, ev: MouseEvent) => any) | null {
+    new pluginIndex().openDialog(window.self !== window.top);
+    return null;
   }
   
   render() {
-    return (
-      <div className="col-md-12">
-        <div className="card card-container">
-          <img
-            src="//ssl.gstatic.com/accounts/ui/avatar_2x.png"
-            alt="profile-img"
-            className="profile-img-card"
-          />
-          <h3>Login component</h3>
-        </div>
-      </div>
-    );
+    return <></>;
   }
 }
