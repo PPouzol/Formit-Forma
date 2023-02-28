@@ -10,7 +10,8 @@
       function replaceDialogContent()
       {
         //const returnUrl = "https%3A%2F%2Fapp.spacemaker.ai%2Fprojects";
-        const returnUrl = "https%3A%2F%2Flocal.spacemaker.ai:3001";
+        const baseUrl = window.location.href;
+        const returnUrl = `${baseUrl}?loggedIn=1`;
         window.location.replace(`https://app.spacemaker.ai/auth/login?rd=${returnUrl}`);
       }
     </script>
