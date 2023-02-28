@@ -15,5 +15,5 @@ FormitPlugin.ShowDialog = function(){
 
 FormitPlugin.CloseDialog = function(){
     //close parent dialog window
-    //FormIt.CloseDialog();
+    FormIt.CloseDialogBox();
 }
