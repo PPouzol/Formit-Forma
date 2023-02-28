@@ -4,13 +4,13 @@
         {
             "name": "Open project",
             "command": "FormitPlugin.ShowDialog",
-            "iconText": "Open",
+            "iconText": "O",
             "iconURL": "PLUGINLOCATION/vite.svg"
         },
         {
             "name": "Push to project",
             "command": "FormitPlugin.PushToProject",
-            "iconText": "Push",
+            "iconText": "P",
             "iconURL": "PLUGINLOCATION/vite.svg"
         }
     ]
