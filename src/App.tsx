@@ -1,5 +1,4 @@
-import { Component } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Component, createRef } from "react";
 import * as ReactDOMServer from 'react-dom/server';
 
 import IUser from './types/user.type';
@@ -10,24 +9,14 @@ import pluginIndex from "../index.js";
 import Login from "./components/login.component";
 import FormitForma from "./components/forma.component";
 
-type Props = {};
+type Props = {}
 
-type State = {
-  currentUser: IUser | undefined
-}
+class App extends Component<Props> {
+  formitFormaComponent: any;
 
-var loginContent: JSX.Element = <Login />;
-var loggedInContent: JSX.Element = <FormitForma />;
-
-class App extends Component<Props, State> {
   constructor(props: Props) {
-// class App extends Component {
-//     constructor(props) {
     super(props);
-
-    this.state = {
-      currentUser: undefined,
-    };
+    this.formitFormaComponent = createRef();
   }
 
   componentDidMount() {
@@ -56,7 +45,7 @@ class App extends Component<Props, State> {
     }
     else
     {
-      node = loggedInContent;
+      node = <FormitForma ref={this.formitFormaComponent}/>;
     }
 
     if(node !== null)

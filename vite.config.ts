@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 const { resolve } = require('path')
+import fs from "fs"
+import os from "os"
 
 export default defineConfig({
   root: '.',
@@ -29,5 +31,28 @@ export default defineConfig({
         }
       ]
     })
-  ]
+  ],
+  define: {
+    __NODE_ENV__: JSON.stringify(process.env.NODE_ENV),
+    'process.env': {},
+  },
+  server: process.env.DEV_SERVER && {
+    open: true,
+    host: "local.spacemaker.ai",
+    port: 3001,
+    https: {
+      key: fs.readFileSync(`${os.homedir()}/.spacemaker-cli/server.pem`),
+      cert: fs.readFileSync(`${os.homedir()}/.spacemaker-cli/cert.pem`),
+    },
+    proxy: {
+      "/api": {
+        target: "https://app.spacemaker.ai/",
+        changeOrigin: true,
+      },
+      "/app": {
+        target: "https://app.spacemaker.ai/",
+        changeOrigin: true,
+      }
+    }
+  }
 })

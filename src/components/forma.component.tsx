@@ -1,42 +1,61 @@
 import { Component } from "react";
+import FormaService from "../services/forma.service";
 
 type Props = {};
 
-type State = {
-  redirect: string | null,
-  message: string,
-  loading: boolean
-};
-export default class FormitForma extends Component<Props, State> {
+export default class FormitForma extends Component<Props> {
   constructor(props: Props) {
     super(props);
+    this.handleFetchWorkspace();
   }
 
-  componentWillUnmount() {
-    window.location.reload();
+  handleFetchWorkspace()  {
+    FormaService.getWorkspaces()
+    .then(values => {
+      console.log(values)
+      let workspaces = (document.getElementById("workspace-select") as HTMLSelectElement);
+      if(workspaces !== null)
+      {
+        for (const value of values) {
+          const option = document.createElement('option');
+          option.value = value.id;
+          option.innerHTML = value.name;
+          workspaces.appendChild(option);
+        }
+         
+        workspaces!.addEventListener('change', this.handleWorkspaceSelectChange);        
+      }
+    }).catch(error => console.log(error))     
   }
 
-  handleFetch() {
-    this.setState({
-      message: "",
-      loading: true
-    });
+  handleWorkspaceSelectChange()  {
+    let workspaces = (document.getElementById("workspace-select")) as HTMLSelectElement;
+    if(workspaces.selectedIndex !== 0)
+    {
+      let projects = (document.getElementById("project-select")) as HTMLSelectElement;
+      projects!.disabled = false;
+
+      FormaService.getProjects("0")
+      .then(values => {
+        console.log(values)
+        if(projects !== null)
+        {
+          for (const value of values) {
+            const option = document.createElement('option');
+            option.value = value.id;
+            option.innerHTML = value.name;
+            projects.appendChild(option);
+          }
+        }
+      }).catch(error => console.log(error))   
+    }  
   }
   
-  handlePush() {
-    this.setState({
-      message: "",
-      loading: true
-    });
+  projectSelected() {
+    // TBD
   }
 
   render() {
-    const { loading, message } = this.state;
-
-    const initialValues = {
-      authToken: ""
-    };
-
     return (
       <div className="col-md-12">
         <div className="card card-container">
@@ -45,7 +64,16 @@ export default class FormitForma extends Component<Props, State> {
             alt="profile-img"
             className="profile-img-card"
           />
-          <h3>Forma component</h3>
+          <h3 id="identifier">Forma component</h3>
+          <select id="workspace-select" 
+                  className="fetchSelect" 
+                  defaultValue={""}>
+            <option value="">Select a Workspace</option>
+          </select>
+          <select id="project-select" className="fetchSelect" defaultValue={""} disabled>
+            <option value="">Select a Project</option>
+          </select>
+          <button className="st" id="sync-btn" hidden>Sync</button>     
         </div>
       </div>
     );

@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "dev-proxy": "NODE_ENV=development DEV_SERVER=1 vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",

@@ -77,6 +77,11 @@ h1.title {
   background-color:lightyellow;
 }
 
+.fetchSelect{
+  width: 80%;
+  margin-bottom: 15px;
+}
+
 .noProjects{
   padding:10px;
   text-align:center;

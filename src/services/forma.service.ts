@@ -1,30 +1,23 @@
-import axios from 'axios';
-import authHeader from './auth-header';
-
-const API_URL = 'http://localhost:8080/api/test/';
+const API_URL = 'https://local.spacemaker.ai:3001';
 
 class FormaService {
-  getProjects(userId: string) {
-    return axios.get(API_URL + `projects?user=${userId}`, 
-    { 
-      headers: authHeader() 
+  getWorkspaces() {
+    return fetch(`${API_URL}/api/workspaces`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return res.json();
     });
   }
 
-  getVisuals(projectId: string) {
-    return axios.get(API_URL + `visuals?project=${projectId}`, 
-    { 
-      headers: authHeader() 
-    });
-  }
-
-  pushNewDatas() {
-    return axios.post(API_URL + 'push', 
-    {
-      // datas
-    },  
-    { 
-      headers: authHeader() 
+  getProjects(customerId: string) {
+    return fetch(`${API_URL}/api/projects?customer=${customerId}&include_archived=false`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return res.json();
     });
   }
 }
