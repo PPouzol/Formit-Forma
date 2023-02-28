@@ -2,16 +2,16 @@
     "name": "Formit<>Forma Toolbar",
     "buttons": [
         {
-            "name": "Open project",
+            "name": "OpenProject",
             "command": "FormitPlugin.ShowDialog",
-            "iconText": "O",
-            "iconURL": "PLUGINLOCATION/vite.svg"
+            "iconText": "OP",
+            "iconURL": "PLUGINLOCATION/assets/Pull.png"
         },
         {
-            "name": "Push to project",
+            "name": "PushToProject",
             "command": "FormitPlugin.PushToProject",
-            "iconText": "P",
-            "iconURL": "PLUGINLOCATION/vite.svg"
+            "iconText": "PtP",
+            "iconURL": "PLUGINLOCATION/assets/Send.png"
         }
     ]
 }               
