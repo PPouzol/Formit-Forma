@@ -3,7 +3,8 @@
     "PluginDescription": "Connection between Formit and Forma environment",
     "PluginType": "Toolbar",
     "ToolbarURL": "PLUGINLOCATION/toolbar.json",
-    "Panel": "PLUGINLOCATION/index.html",
+    "__PluginType__": "Panel",
+    "__Panel__": "PLUGINLOCATION/index.html",
     "PanelIcon": "PLUGINLOCATION/assets/react.svg",
     "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ]
 }
