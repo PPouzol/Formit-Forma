@@ -9,7 +9,9 @@
     <script type="text/javascript">
       function replaceDialogContent()
       {
-        window.location.replace("https://app.spacemaker.ai/auth/login?rd=https%3A%2F%2Fapp.spacemaker.ai%2Fprojects");
+        //const returnUrl = "https%3A%2F%2Fapp.spacemaker.ai%2Fprojects";
+        const returnUrl = "https%3A%2F%2Flocal.spacemaker.ai:3001";
+        window.location.replace(`https://app.spacemaker.ai/auth/login?rd=${returnUrl}`);
       }
     </script>
     <script type="module" crossorigin src="./assets/admin-6f246ac0.js"></script>
