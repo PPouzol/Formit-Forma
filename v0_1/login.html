@@ -2,19 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/assets/react.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Forma Login</title>
 
     <script type="text/javascript">
       function replaceDialogContent()
       {
-        window.location.replace("https://app.spacemaker.ai/auth/login?rd=https%3A%2F%2Fapp.spacemaker.ai%2Fprojects");
+        //const baseUrl = "https%3A%2F%2Fapp.spacemaker.ai%2Fprojects";
+        const baseUrl = "https://local.spacemaker.ai:3001";
+        const returnUrl = `${baseUrl}?loggedIn=1`;
+        window.location.replace(`https://app.spacemaker.ai/auth/login?rd=${returnUrl}`);
       }
     </script>
-    <script type="module" crossorigin src="./assets/admin-6f246ac0.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/index-123d3dfa.js">
-    <link rel="stylesheet" href="./assets/index-97cdb043.css">
+    <script type="module" crossorigin src="./assets/admin-34829419.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/index-1b2a2d0d.js">
+    <link rel="stylesheet" href="./assets/index-36046ce9.css">
   </head>
   <body onload="replaceDialogContent()">
     <div id="root"></div>

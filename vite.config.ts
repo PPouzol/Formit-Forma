@@ -23,10 +23,19 @@ export default defineConfig({
       targets: [
         {
           src: './manifest.json',
+          dest: '.',
+          rename: 'manifest.json',
+        },
+        {
+          src: './src/assets',
           dest: '.'
         },
         {
           src: './plugin_formit.js',
+          dest: '.'
+        },
+        {
+          src: './README.md',
           dest: '.'
         }
       ]

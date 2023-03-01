@@ -21,6 +21,20 @@ h1.title {
   padding: 0px 10px 10px 10px !important;
 }
 
+h3.title {
+  font-size: 13px !important;
+  font-family: Arial !important;
+  color: grey !important;
+  font-weight:bold !important;
+  margin-bottom: 0 !important;
+  padding: 0px 10px 10px 10px !important;
+}
+
+h4 {
+  font-size: 13px !important;
+  color: grey !important;
+}
+
 #Login{
   width:100%;
 }
@@ -30,7 +44,12 @@ h1.title {
 }
 
 #MainControls, #AppControls{
-  text-align:center;
+  text-align: left;
+  border-top: solid 1px lightsteelblue;
+}
+
+#FormaControls {
+  text-align: center;
   border-top: solid 1px lightsteelblue;
 }
 
@@ -108,4 +127,8 @@ h1.title {
   background-color: gold;
   -webkit-mask: url(images/alert.svg) no-repeat center;
   mask: url(images/alert.svg) no-repeat center;
+}
+
+.error {
+  color: red;
 }

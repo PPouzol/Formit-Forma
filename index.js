@@ -12,19 +12,50 @@ class pluginIndex {
         return decodeURIComponent(cookie.substring(nameLenPlus));
       })[0] || null;
   }
+  
+  accessSpacemaker(fromWeb)
+  {
+    let loginDialog = null;
+    if(fromWeb)
+    {
+      loginDialog = window.open("https://app.spacemaker.ai/auth/login?rd=https%3A%2F%2Fapp.spacemaker.ai%2Fprojects", "_blank", "width= 500px, height=500px");
+      let id = setInterval(() => {
+        // try to retrieve cookie each 1s, and close popup in case of success
+        let cookie = this.getCookie('ajs_user_id');
+        if(cookie !== null)
+        {
+          clearInterval(id);
+          if(fromWeb && loginDialog !== null)
+          {
+            loginDialog.close();
+          } 
+          else if(!fromWeb)
+          {
+            FormItInterface.CallMethod("FormitPlugin.CloseDialog");
+          }
+        }
+      }, 1000);
+    }
+    else
+    {
+      //const baseUrl = "https%3A%2F%2Fapp.spacemaker.ai%2Fprojects";
+      const baseUrl = "https://local.spacemaker.ai:3001";
+      const returnUrl = `${baseUrl}?loggedIn=1`;
+      window.location.replace(`https://app.spacemaker.ai/auth/login?rd=${returnUrl}`);
+    }
+  }
 
   openDialog(fromWeb)
   {
     let loginDialog = null;
     if(fromWeb)
     {
-      loginDialog = window.open("https://app.spacemaker.ai/auth/login?rd=https%3A%2F%2Fapp.spacemaker.ai%2Fprojects", "_blank", "width= 500px, height=500px");
+      window.replace("https://app.spacemaker.ai/auth/login?rd=https%3A%2F%2Fapp.spacemaker.ai%2Fprojects", "_blank", "width= 500px, height=500px");
     }
     else
     {
       FormItInterface.CallMethod("FormitPlugin.ShowDialog");
     }
-
     let id = setInterval(() => {
       // try to retrieve cookie each 1s, and close popup in case of success
       let cookie = this.getCookie('ajs_user_id');
@@ -40,7 +71,7 @@ class pluginIndex {
           FormItInterface.CallMethod("FormitPlugin.CloseDialog");
         }
       }
-    }, 1000);
+    }, 1000);    
   }
 }
 export default pluginIndex

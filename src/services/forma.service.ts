@@ -20,6 +20,16 @@ class FormaService {
       return res.json();
     });
   }
+  
+  getProposals(projectId: string) {
+    return fetch(`${API_URL}/api/library/v1/projects/${projectId}/proposals?&exclude=geometries&limit=15`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return res.json();
+    });
+  }
 }
 
 export default new FormaService();
