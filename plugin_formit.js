@@ -14,10 +14,12 @@ FormitPlugin.ShowDialog = function(){
 }
 
 FormitPlugin.CheckModifications = function(){
+    debugger
     return FormIt.Model.IsModified();
 }
 
 FormitPlugin.GetGeometryData = function(){
+    debugger
   const previousLayersVisibility = this.hideLayersBeforeSave()
   FormIt.Layers.SetLayerVisibility(formItLayerNames.FORMA_BUILDINGS, false)
   const formitGeometry = WSM.Utils.GetAllGeometryInformation(MAIN_HISTORY_ID) ?? []
