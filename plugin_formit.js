@@ -13,6 +13,10 @@ FormitPlugin.ShowDialog = function(){
     FormIt.CreateDialogBox(JSON.stringify(dialogParams));
 }
 
+FormitPlugin.CheckModifications = function(){
+    return FormIt.Model.IsModified();
+}
+
 FormitPlugin.CloseDialog = function(){
     //close parent dialog window
     FormIt.CloseDialogBox();
