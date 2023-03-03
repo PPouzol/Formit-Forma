@@ -1,3 +1,5 @@
+import { MAIN_HISTORY_ID } from "./src/helpers/typesAndConstants" 
+
 FormitPlugin = {};
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
 FormitPlugin.ShowDialog = function(){
