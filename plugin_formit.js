@@ -25,7 +25,6 @@ FormitPlugin.EnsureInstances = function(){
   const aOtherForInstance = [];
   var topLevels = WSM.APIGetAllNonOwnedReadOnly(MAIN_HISTORY_ID);
   for (i = 0; i < topLevels.length; i++) {
-    // test log
     var nObjID = topLevels[i];
     const nType = WSM.APIGetObjectTypeReadOnly(MAIN_HISTORY_ID, nObjID);
     if (nType === WSM.nBodyType || nType === WSM.nMeshType) {
@@ -45,7 +44,8 @@ FormitPlugin.EnsureInstances = function(){
     FormIt.UndoManagement.BeginState();
 
     // Create one instance per each body and mesh.
-    for (const nObjID of aBodiesAndMeshes) {
+    for (i = 0; i < topLevels.length; i++) {
+      var nObjID = aBodiesAndMeshes[i];
       WSM.Utils.CreateAlignedAndCenteredGroup(MAIN_HISTORY_ID, [nObjID]);
     }
 
