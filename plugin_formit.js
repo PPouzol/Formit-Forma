@@ -23,7 +23,7 @@ FormitPlugin.EnsureInstances = function(){
   const MAIN_HISTORY_ID = 0;
   const aBodiesAndMeshes = [];
   const aOtherForInstance = [];
-  const topLevels = WSM.APIGetAllNonOwnedReadOnly(MAIN_HISTORY_ID);
+  let topLevels = WSM.APIGetAllNonOwnedReadOnly(MAIN_HISTORY_ID);
   for (i = 0; i < topLevels.length; i++) {
     // test log
     let nObjID = topLevels[i];
