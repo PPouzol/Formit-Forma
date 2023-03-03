@@ -17,3 +17,7 @@ FormitPlugin.CloseDialog = function(){
     //close parent dialog window
     FormIt.CloseDialogBox();
 }
+
+FormitPlugin.CheckModifications = function(){
+    return FormIt.Model.IsModified();
+}
