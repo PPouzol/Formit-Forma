@@ -1,4 +1,4 @@
-import { MAIN_HISTORY_ID } from "./src/helpers/typesAndConstants" 
+const MAIN_HISTORY_ID = 0;
 
 FormitPlugin = {};
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
