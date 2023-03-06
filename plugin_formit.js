@@ -21,8 +21,6 @@ FormitPlugin.CloseDialog = function(){
 }
 
 FormitPlugin.EnsureInstances = function() {
-  debugger
-  
   const aBodiesAndMeshes = []
   const aOtherForInstance = []
   const topLevels = WSM.APIGetAllNonOwnedReadOnly(MAIN_HISTORY_ID)
@@ -67,6 +65,8 @@ FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
   
 FormitPlugin.GetAllGeometryInformation = function(args) {
   debugger
+  const previousLayersVisibility = hideLayersBeforeSave()
+
   names = args[0];
   historyId = args[1];
   FormIt.Layers.SetLayerVisibility(names, false)
@@ -77,5 +77,64 @@ FormitPlugin.GetAllGeometryInformation = function(args) {
   }  
   // We need to set 3D Sketch buildings layer visibility to true before getting polygon data
   FormIt.Layers.SetLayerVisibility(names, true);
-  return formitGeometry;
+
+  const polygonData = this.getPolygonData()
+  this.returnLayersToPreviousVibility(previousLayersVisibility)
+
+  return { formitGeometry, polygonData };
+}
+
+
+function returnLayersToPreviousVibility(layers) {
+  debugger
+  for (i=0; i < layers.length; i++) {
+    var layer = layers[i];
+    if (layer.layerData) {
+      layer.layerData.Visible = layer.previousVisiblity
+      FormIt.Layers.SetLayersVisibility([layer.layerData])
+    }
+  }
+}
+
+function hideLayersBeforeSave() {
+  debugger
+  const layersToAvoidSaving = [
+    formItLayerNames.FORMA_CONTEXT,
+    formItLayerNames.FORMA_TERRAIN,
+    formItLayerNames.SURROUNDING_BUILDINGS,
+    formItLayerNames.FORMA_AUTO_BUILDINGS,
+    formItLayerNames.FORMA_PROPOSAL_BUILDINGS,
+    formItLayerNames.FORMA_SITE_LIMIT,
+    formItLayerNames.FORMA_BUILDING,
+    formItLayerNames.FORMA_VEGETATION,
+    formItLayerNames.FORMA_GENERIC,
+    formItLayerNames.FORMA_ROAD,
+    formItLayerNames.FORMA_RAILS,
+    formItLayerNames.FORMA_PROPERTY_BOUNDARY,
+    formItLayerNames.FORMA_ZONE,
+    formItLayerNames.FORMA_BUILDING_ENVELOPE,
+  ];
+
+  var results = [];
+  for (i=0; i < layersToAvoidSaving.length; i++) {
+    var layerName = layersToAvoidSaving[i];
+    
+    const formItLayerId = FormIt.Layers.GetLayerID(layerName)
+    let previousVisiblity = false
+    let layerData
+
+    if (formItLayerId != WSM.INVALID_ID) {
+      layerData = FormIt.Layers.GetLayerData(formItLayerId)
+      previousVisiblity = layerData.Visible
+      layerData.Visible = false
+      FormIt.Layers.SetLayersVisibility([layerData])
+    }
+
+    results[results.length] = {
+      layerData,
+      previousVisiblity
+    };
+  }
+
+  return results;
 }
