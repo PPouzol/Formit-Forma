@@ -41,5 +41,27 @@ FormitPlugin.FillTypesArrays = function(){
       aOtherForInstance.push(nObjID)
     }
   }
-  return {aBodiesAndMeshes, aOtherForInstance};
+  if (aBodiesAndMeshes.length > 0 || aOtherForInstance.length > 0) {
+    FormIt.UndoManagement.BeginState()
+      
+    // Create one instance per each body and mesh.
+    for (const nObjID of aBodiesAndMeshes) {
+      WSM.Utils.CreateAlignedAndCenteredGroup(MAIN_HISTORY_ID, [nObjID])
+    }
+      
+    if (aOtherForInstance.length > 0) {
+      // Create one instance for all the remaining stuff
+      WSM.Utils.CreateAlignedAndCenteredGroup(MAIN_HISTORY_ID, aOtherForInstance)
+    }
+      
+    FormIt.UndoManagement.EndState("Move toplevels to instances")
+  }
+}
+
+FormitPlugin.GetAllGeometryInformation = function() {
+  return WSM.Utils.GetAllGeometryInformation(MAIN_HISTORY_ID) ?? [];
+}
+
+FormitPlugin.GetAllGeometryInformation = function(objectId) {
+  return WSM.Utils.ComputeGeometryFromLevels(MAIN_HISTORY_ID, false, objectId);
 }
