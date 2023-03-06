@@ -65,3 +65,18 @@ FormitPlugin.EnsureInstances = function() {
     }
     debugger
   }
+  
+FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
+  debugger
+  return WSM.Utils.ComputeGeometryFromLevels(MAIN_HISTORY_ID, false, objectId);
+}
+  
+FormitPlugin.GetAllGeometryInformation = function(names, historyId) {
+  debugger
+  FormIt.Layers.SetLayerVisibility(names, false)
+  const formitGeometry = WSM.Utils.GetAllGeometryInformation(historyId) ?? []
+    
+  // We need to set 3D Sketch buildings layer visibility to true before getting polygon data
+  FormIt.Layers.SetLayerVisibility(names, true)
+  return formitGeometry;
+}
