@@ -60,7 +60,10 @@ FormitPlugin.FillTypesArrays = function(){
 }
 
 FormitPlugin.GetAllGeometryInformation = function() {
-  return WSM.Utils.GetAllGeometryInformation(MAIN_HISTORY_ID) ?? [];
+  var geometries = WSM.Utils.GetAllGeometryInformation(MAIN_HISTORY_ID);
+  if(geometries === null)
+    geometries = [];
+  return geometries;
 }
 
 FormitPlugin.GetAllGeometryInformation = function(objectId) {
