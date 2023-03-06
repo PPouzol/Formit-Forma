@@ -45,7 +45,8 @@ FormitPlugin.FillTypesArrays = function(){
     FormIt.UndoManagement.BeginState()
       
     // Create one instance per each body and mesh.
-    for (const nObjID of aBodiesAndMeshes) {
+    for (i=0; i < aBodiesAndMeshes.length; i++) {
+      var nObjID = topLevels[i];
       WSM.Utils.CreateAlignedAndCenteredGroup(MAIN_HISTORY_ID, [nObjID])
     }
       
