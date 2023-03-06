@@ -60,6 +60,7 @@ FormitPlugin.FillTypesArrays = function(){
 }
 
 FormitPlugin.GetAllGeometryInformation = function() {
+  debugger
   var geometries = WSM.Utils.GetAllGeometryInformation(MAIN_HISTORY_ID);
   if(geometries === null)
     geometries = [];
@@ -67,5 +68,6 @@ FormitPlugin.GetAllGeometryInformation = function() {
 }
 
 FormitPlugin.GetAllGeometryInformation = function(objectId) {
+  debugger
   return WSM.Utils.ComputeGeometryFromLevels(MAIN_HISTORY_ID, false, objectId);
 }
