@@ -67,7 +67,7 @@ FormitPlugin.GetAllGeometryInformation = function() {
   return geometries;
 }
 
-FormitPlugin.GetAllGeometryInformation = function(objectId) {
+FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
   debugger
   return WSM.Utils.ComputeGeometryFromLevels(MAIN_HISTORY_ID, false, objectId);
 }
