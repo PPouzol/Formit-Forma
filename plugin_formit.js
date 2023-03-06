@@ -22,6 +22,7 @@ FormitPlugin.CloseDialog = function(){
 }
 
 FormitPlugin.FillTypesArrays = function(){
+  debugger
   const aBodiesAndMeshes = []
   const aOtherForInstance = []
   const topLevels = WSM.APIGetAllNonOwnedReadOnly(MAIN_HISTORY_ID)
