@@ -40,6 +40,6 @@ FormitPlugin.Multiply = function(args) {
 
 FormitPlugin.ReadFile = function(args) {
   var filePath = args[0];
-  var content = FormIt.ReadFile(filePath);
+  var content = FormIt.readFile(filePath);
   return content;
 }
