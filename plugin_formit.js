@@ -104,7 +104,8 @@ FormitPlugin.BuildElementsFromGeometry = function(
 
     if (geometry.transforms.length > 1) {
       elements[element.id] = element
-      for (const transform of geometry.transforms) {
+      for (i=0; i < geometry.transforms.length; i++) {
+        var transform = geometry.transforms[i];
         let transf3d = WSM.Geom.Transf3d()
 
         if (transform.data) {
