@@ -32,7 +32,6 @@ FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
   return WSM.Utils.ComputeGeometryFromLevels(MAIN_HISTORY_ID, false, objectId);
 }
 
-
 FormitPlugin.FillTypesArrays = function() {
   const aBodiesAndMeshes = []
   const aOtherForInstance = []
@@ -67,5 +66,86 @@ FormitPlugin.FillTypesArrays = function() {
     }
       
     FormIt.UndoManagement.EndState("Move toplevels to instances")
+  }
+}
+
+FormitPlugin.BuildElementsFromGeometry = function(
+  formitGeometry,
+  elements,
+  rootElement,
+  offsetTransf3d,
+  isBuildingFloor
+) {
+  const feetToMeters = 0.3047999995367042
+  const point = WSM.Geom.Point3d(0, 0, 0)
+  const vector = WSM.Geom.Vector3d(feetToMeters, feetToMeters, feetToMeters)
+  const feetToMetersTransf3d = WSM.Geom.MakeScalingTransform(point, vector)
+
+  for (i=0; i < formitGeometry.length; i++) {
+    var geometry = formitGeometry[i];
+    const mesh = optimizeMesh(mergeMeshes(geometry.meshes))
+    const element = {
+      id: uuid.v4(),
+      children: [],
+      properties: {
+        category: "ConceptualElement",
+        geometry: {
+          type: ReferenceType.INLINE,
+          format: "Mesh",
+          verts: mesh.vertices,
+          faces: mesh.indices,
+        },
+      },
+    }
+
+    if (isBuildingFloor) {
+      element.properties.subcategory = "ConceptualBuildingFloor"
+    }
+
+    if (geometry.transforms.length > 1) {
+      elements[element.id] = element
+      for (const transform of geometry.transforms) {
+        let transf3d = WSM.Geom.Transf3d()
+
+        if (transform.data) {
+          transf3d.data = transform.data
+        }
+
+        if (offsetTransf3d && offsetTransf3d.data) {
+          //@ts-ignore
+          transf3d = WSM.Transf3d.Multiply(offsetTransf3d, transf3d)
+        }
+
+        //@ts-ignore
+        transf3d = WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d)
+
+        rootElement.children.push({
+          id: element.id,
+          transform: transpose(transf3d.data),
+        })
+      }
+    } else {
+      let transf3d = WSM.Geom.Transf3d()
+
+      if (geometry.transforms[0].data) {
+        transf3d.data = geometry.transforms[0].data
+      }
+
+      if (offsetTransf3d && offsetTransf3d.data) {
+        //@ts-ignore
+        transf3d = WSM.Transf3d.Multiply(offsetTransf3d, transf3d)
+      }
+
+      //@ts-ignore
+      transf3d = WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d)
+
+      elements[element.id] = {
+        ...element,
+      }
+      rootElement.children.push({
+        id: element.id,
+        transform: transpose(transf3d.data),
+      })
+    }
   }
 }
