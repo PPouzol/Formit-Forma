@@ -106,7 +106,7 @@ FormitPlugin.BuildElementsFromGeometry = function(
       elements[element.id] = element
       for (i=0; i < geometry.transforms.length; i++) {
         var transform = geometry.transforms[i];
-        let transf3d = WSM.Geom.Transf3d()
+        var transf3d = WSM.Geom.Transf3d()
 
         if (transform.data) {
           transf3d.data = transform.data
@@ -126,7 +126,7 @@ FormitPlugin.BuildElementsFromGeometry = function(
         })
       }
     } else {
-      let transf3d = WSM.Geom.Transf3d()
+      var transf3d = WSM.Geom.Transf3d()
 
       if (geometry.transforms[0].data) {
         transf3d.data = geometry.transforms[0].data
