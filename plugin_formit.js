@@ -37,3 +37,8 @@ FormitPlugin.Multiply = function(args) {
   var transf3d = args[1];
   return WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
 }
+
+FormitPlugin.ReadFile = function(args) {
+  var filePath = args[0];
+  return FormIt.ReadFile(filePath);
+}
