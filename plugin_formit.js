@@ -141,7 +141,7 @@ FormitPlugin.BuildElementsFromGeometry = function(
       transf3d = WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d)
 
       elements[element.id] = {
-        ...element,
+        element
       }
       rootElement.children.push({
         id: element.id,
