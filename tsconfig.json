@@ -1,26 +1,24 @@
 {
   "compilerOptions": {
+    "module": "ESNext",
     "target": "ESNext",
-    "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": true,
+    "lib": ["dom", "dom.iterable", "es2019", "esnext.array"],
+    "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "preserve",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   },
   "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }],
-  "noImplicitAny": false,
-  "typeRoots": [
-    "./typings",
-    "./node_modules/@types/"
-  ]
+  "exclude": ["node_modules", "**/node_modules/*"]
 }

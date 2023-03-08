@@ -1,6 +1,6 @@
 'use strict';
 import { Component } from "react";
-import pluginIndex from "../../index.js";
+import formitFormaService from "../services/formit-forma.service";
 
 type Props = {};
 
@@ -18,7 +18,7 @@ export default class Login extends Component<Props, State> {
   }
 
   static login(): ((this: GlobalEventHandlers, ev: MouseEvent) => any) | null {
-    new pluginIndex().accessSpacemaker();
+    formitFormaService.accessSpacemaker(false);
     return null;
   }
   

@@ -1,10 +1,17 @@
-import { Component, useEffect, useState } from "react";
+import { Component } from "react";
 import fetchResultObj from "../common/interfaces";
 import FormaService from "../services/forma.service";
+import FormitFormaService from "../services/formit-forma.service";
 
 type Props = {};
 
-export default class FormitForma extends Component<Props> {  
+type State = {
+  workspaceId: any,
+  projectId: any,
+  proposalId: any
+}
+
+export default class FormitForma extends Component<Props, State> {  
   constructor(props: Props) {
     super(props);
     this.handleFetchValues(FormaService.getWorkspaces(), 
@@ -40,7 +47,7 @@ export default class FormitForma extends Component<Props> {
       {
         let workspaces = results.map((e: any) => {
           var filledObj = new fetchResultObj()
-          filledObj.Fill(e.id, e.name, e.metadata);
+          filledObj.Fill(e.id, e.name, e.version, e.metadata);
           return filledObj;
         });
         this.fillSelectOptions(workspaces, "workspace-select", this.handleWorkspaceSelectChange.bind(this));
@@ -58,11 +65,11 @@ export default class FormitForma extends Component<Props> {
       let projects = results
       .map((e: any) => {
         var filledObj = new fetchResultObj()
-        filledObj.Fill(e.id, e.name, e.metadata);
+        filledObj.Fill(e.id, e.name, e.version, e.metadata);
         return filledObj;
       })
       .filter((e: any) => {
-        return e.metadata !== null && !e.metadata.isDraft
+        return e.metadata !== null && !e.metadata.isDraft && e.version !== 1
       });
       this.fillSelectOptions(projects, "project-select", this.handleProjectSelectChange.bind(this));
     } catch (error) {
@@ -76,9 +83,13 @@ export default class FormitForma extends Component<Props> {
     try {
       if(results.data !== null)
       {
-        let proposals = results.data.map((e: any) => {
+        let proposals = results.map((e: any) => {
           var filledObj = new fetchResultObj()
-          filledObj.Fill(e.id, e.name, e.metadata);
+          const split = e.urn.split(":");
+          let id = split[split.length - 2];
+          let revision = split[split.length - 1];
+          let name = e.properties.name;
+          filledObj.Fill(id, name, revision, e.metadata);
           return filledObj;
         });
         this.fillSelectOptions(proposals, "proposal-select", this.handleProposalSelectChange.bind(this));
@@ -92,8 +103,12 @@ export default class FormitForma extends Component<Props> {
 
   handleWorkspaceSelectChange()  {
     let workspaces = (document.getElementById("workspace-select")) as HTMLSelectElement;
-    let id = workspaces.value;      
-    this.handleFetchValues(FormaService.getProjects(id), 
+    this.state = {
+      workspaceId: workspaces.value,
+      projectId: "",
+      proposalId: ""
+    };      
+    this.handleFetchValues(FormaService.getProjects(this.state.workspaceId), 
     this.handleProjectsFetchedValues.bind(this));
   }
   
@@ -101,18 +116,33 @@ export default class FormitForma extends Component<Props> {
     let projects = (document.getElementById("project-select")) as HTMLSelectElement;
     if(projects.selectedIndex !== 0)
     {
-      let projectId = projects.value;
-      this.handleFetchValues(FormaService.getProposals(projectId), 
+      this.state = {
+        workspaceId: this.state.workspaceId,
+        projectId: projects.value,
+        proposalId: ""
+      };      
+      this.handleFetchValues(FormaService.getProposals(this.state.projectId), 
         this.handleProposalsFetchedValues.bind(this));
     }
-}
+  }
   
   handleProposalSelectChange() {
     let proposals = (document.getElementById("proposal-select")) as HTMLSelectElement;
     if(proposals.selectedIndex !== 0)
     {
-      let proposalId = proposals.value;
-      // TBD
+      this.state = {
+        workspaceId: this.state.workspaceId,
+        projectId: this.state.projectId,
+        proposalId: proposals.value
+      };
+      let syncButton = document.getElementById("sync-btn");
+      if(syncButton !== null)
+      {
+        (syncButton as HTMLButtonElement).disabled = false;
+        syncButton.onclick = () => {
+          FormitFormaService.save(this.state);
+        };
+      }      
     }
   }
 
@@ -141,7 +171,7 @@ export default class FormitForma extends Component<Props> {
                   defaultValue={""} >
             <option value=''>Select a proposal</option>
           </select>
-          <button className="st" id="sync-btn" hidden>Sync</button>  
+          <button className="st" id="sync-btn" disabled>Sync</button>  
           <label id="errorMessage" className="error" hidden></label>   
         </div>
       </div>

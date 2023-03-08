@@ -22,7 +22,8 @@ class FormaService {
   }
   
   getProposals(projectId: string) {
-    return fetch(`${API_URL}/api/library/v1/projects/${projectId}/proposals?&exclude=geometries&limit=15`)
+    //return fetch(`${API_URL}/api/library/v1/projects/${projectId}/proposals?&exclude=geometries&limit=15`)
+    return fetch(`${API_URL}/api/proposal/elements?authcontext=${projectId}&version=2`)
     .then(res => {
       if (!res.ok) {
         throw new Error(res.statusText);

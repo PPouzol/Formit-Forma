@@ -1,15 +1,18 @@
-import { Component, createRef } from "react";
+import { Component, createRef, useEffect } from "react";
 import * as ReactDOMServer from 'react-dom/server';
-
-import IUser from './types/user.type';
 import './App.css'
-
-import pluginIndex from "../index.js";
-
 import Login from "./components/login.component";
 import FormitForma from "./components/forma.component";
+import formitFormaService from "./services/formit-forma.service";
 
 type Props = {}
+
+declare global {
+  let WSM: any;
+  let FormIt: any;
+  let FormItInterface: any;
+  let FormitPlugin: any;
+}
 
 class App extends Component<Props> {
   formitFormaComponent: any;
@@ -30,9 +33,8 @@ class App extends Component<Props> {
   }
 
   compileFromCookie(): void {
-    let index = new pluginIndex();
     let loggedIn = window.location.href.indexOf("loggedIn=1") > -1;
-    let cookie = index.getCookie('ajs_user_id');
+    let cookie = formitFormaService.getCookie('ajs_user_id');
     let node: JSX.Element | null = null;
     loggedIn = loggedIn || cookie !== null;
     if(!loggedIn)
