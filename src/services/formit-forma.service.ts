@@ -237,36 +237,40 @@ class FormaSaveService {
     const payload = JSON.stringify({
       projectId
     })
-    const res = await fetch(`/api/spacemaker-object-storage/v1/`, {
-      method: "POST",
-      body: payload,
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": "true",
-      },
-    })
-
-    if (res.ok) {
-      const { id, url, fields } = await res.json()
-      const formData = new FormData()
-
-      Object.keys(fields).forEach((key) => {
-        formData.append(key, fields[key])
-      })
-
-      formData.append("file", file)
-
-      const formRes = await fetch(url, {
+    try {
+      const res = await fetch(`/api/spacemaker-object-storage/v1/`, {
         method: "POST",
-        body: formData,
+        body: payload,
         headers: {
+          "Content-Type": "application/json",
           "Set-Cookie": "true",
         },
       })
-
-      if (formRes.ok) {
-        return id
+  
+      if (res.ok) {
+        const { id, url, fields } = await res.json()
+        const formData = new FormData()
+  
+        Object.keys(fields).forEach((key) => {
+          formData.append(key, fields[key])
+        })
+  
+        formData.append("file", file)
+  
+        const formRes = await fetch(url, {
+          method: "POST",
+          body: formData,
+          headers: {
+            "Set-Cookie": "true",
+          },
+        })
+  
+        if (formRes.ok) {
+          return id
+        }
       }
+    } catch (error) {
+      return false
     }
 
     return false
@@ -325,6 +329,13 @@ class FormaSaveService {
           async (integrateAPIPayload) => {
             this.generateStorageReference(saveContent, projectId, 
               async (spacemakerObjectStorageReferenceId) => {
+                if(!spacemakerObjectStorageReferenceId) {
+                  if(callback)
+                  {
+                    callback(false);
+                  }
+                  return;
+                }
                 this.createOrUpdateElement(
                     projectId,
                     integrateAPIPayload,
@@ -339,13 +350,18 @@ class FormaSaveService {
                       createdUrn: createdOrUpdatedElement.urn
                     })
                     .then((success) => {
-                      debugger
-
                       if(callback)
                       {
                         callback(success);
                       }
                     })
+                  }
+                  else
+                  {
+                    if(callback)
+                      {
+                        callback(false);
+                      }
                   }
                 });
             });
@@ -375,15 +391,19 @@ class FormaSaveService {
     if (uploadLinkData) {
       const uploadSuccess = await this.uploadData(uploadLinkData.url, JSON.stringify(payloadData))
 
-      if (uploadSuccess) {
-        const url = `/api/integrate/elements?version=2&authcontext=${projectId}&s3Id=${uploadLinkData.id}`
-        const res = await fetch(url, {
-          method: "POST",
-        })
-
-        if (res.ok) {
-          return await res.json()
+      try {
+        if (uploadSuccess) {
+          const url = `/api/integrate/elements?version=2&authcontext=${projectId}&s3Id=${uploadLinkData.id}`
+          const res = await fetch(url, {
+            method: "POST",
+          })
+  
+          if (res.ok) {
+            return await res.json()
+          }
         }
+      } catch (error) {
+        return false
       }
     }
 
@@ -424,55 +444,71 @@ class FormaSaveService {
           return false
         }
 
-        const res = await fetch(
-          `/api/proposal/elements/${elementId}/revisions/${revision}?version=2&authcontext=${authContext}`,
-          {
-            method: "PUT",
-            body: JSON.stringify(element)
-          },
-        )
-
-        return res.ok
+        try {
+          const res = await fetch(
+            `/api/proposal/elements/${elementId}/revisions/${revision}?version=2&authcontext=${authContext}`,
+            {
+              method: "PUT",
+              body: JSON.stringify(element)
+            },
+          )
+  
+          return res.ok
+        } catch (error) {
+          return false;
+        }
       }
     }
   }
   
   async getUploadLink(projectId: string) {
-    const res = await fetch(`/api/integrate/upload_link?authcontext=${projectId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": "true",
-      },
-    })
-
-    if (res.ok) {
-      return await res.json()
+    try {
+      const res = await fetch(`/api/integrate/upload_link?authcontext=${projectId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": "true",
+        },
+      })
+  
+      if (res.ok) {
+        return await res.json()
+      }
+    } catch (error) {
+      return false
     }
 
     return false
   }
 
   async uploadData(url: string, data: string) {
-    const res = await fetch(url, {
-      method: "PUT",
-      body: data,
-    })
+    try {
+      const res = await fetch(url, {
+        method: "PUT",
+        body: data,
+      })
 
-    return res.ok
+      return res.ok
+    } catch (error) {
+      return false
+    }
   }
 
   async getProposalElement(
     elementId: string,
     authContext: string,
   ): Promise<ElementResponse | null> {
-    const url = `/api/proposal/elements/${elementId}?authcontext=${authContext}`;
-    const res = await fetch(url);
+    try {
+      const url = `/api/proposal/elements/${elementId}?authcontext=${authContext}`;
+      const res = await fetch(url);
 
-    if (res.ok) {
-      return (await res.json()) as ElementResponse
+      if (res.ok) {
+        return (await res.json()) as ElementResponse
+      }
+      return null;
+    } catch (error) {
+      return null;
     }
-    return null;
   }
 }
 
