@@ -6,8 +6,6 @@ import { formItLayerNames, MAIN_HISTORY_ID, SelectionObject, SelectionObjectID, 
 import { createLayer } from "./layerUtils"
 
 export async function getFloorGeometriesByBuildingId() {
-  debugger
-  
     const buildingsLayer = await createLayer(MAIN_HISTORY_ID, formItLayerNames.FORMA_BUILDINGS)
   
     const layerObjects: SelectionObject[] = await FormIt.Layers.GetAllObjectsOnLayers(
