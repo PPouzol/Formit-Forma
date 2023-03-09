@@ -8,12 +8,13 @@ type Props = {};
 type State = {
   workspaceId: any,
   projectId: any,
-  proposalId: any
+  proposalId: any,
 }
 
 export default class FormitForma extends Component<Props, State> {  
   constructor(props: Props) {
     super(props);
+    this.setStatus(true, false, "Fetching worskpaces...");
     this.handleFetchValues(FormaService.getWorkspaces(), 
           this.handleWorkspacesFetchedValues.bind(this));
   }
@@ -37,12 +38,13 @@ export default class FormitForma extends Component<Props, State> {
       }
       select!.addEventListener('change', listener);        
     }
+    this.setStatus(true, false, "");
   }
   
   handleWorkspacesFetchedValues(results: any) {
     try {
       let haveValues = results !== null && (results as Array<any>).length > 0;
-      document.getElementById("errorMessage")!.style.display = haveValues ? "block" : "none";
+      document.getElementById("message")!.style.display = haveValues ? "block" : "none";
       if(haveValues)
       {
         let workspaces = results.map((e: any) => {
@@ -55,7 +57,7 @@ export default class FormitForma extends Component<Props, State> {
       }
     } catch (error) {
       const errorTxt = "Unable to read workspaces";
-      console.log(error)
+      this.setStatus(false, false, errorTxt);
       throw new Error(errorTxt);
     }
   }
@@ -74,7 +76,7 @@ export default class FormitForma extends Component<Props, State> {
       this.fillSelectOptions(projects, "project-select", this.handleProjectSelectChange.bind(this));
     } catch (error) {
       const errorTxt = "Unable to read projects from selected workspace";
-      console.log(error)
+      this.setStatus(false, false, errorTxt);
       throw new Error(errorTxt);
     }
   }
@@ -96,7 +98,7 @@ export default class FormitForma extends Component<Props, State> {
       }
     } catch (error) {
       const errorTxt = "Unable to read proposals from selected project";
-      console.log(error)
+      this.setStatus(false, false, errorTxt);
       throw new Error(errorTxt);
     }
   }
@@ -108,8 +110,9 @@ export default class FormitForma extends Component<Props, State> {
       projectId: "",
       proposalId: ""
     };      
+    this.setStatus(true, false, "Fetching projects...");
     this.handleFetchValues(FormaService.getProjects(this.state.workspaceId), 
-    this.handleProjectsFetchedValues.bind(this));
+      this.handleProjectsFetchedValues.bind(this));
   }
   
   handleProjectSelectChange()  {
@@ -121,6 +124,7 @@ export default class FormitForma extends Component<Props, State> {
         projectId: projects.value,
         proposalId: ""
       };      
+      this.setStatus(true, false, "Fetching proposals...");
       this.handleFetchValues(FormaService.getProposals(this.state.projectId), 
         this.handleProposalsFetchedValues.bind(this));
     }
@@ -140,9 +144,48 @@ export default class FormitForma extends Component<Props, State> {
       {
         (syncButton as HTMLButtonElement).disabled = false;
         syncButton.onclick = () => {
-          FormitFormaService.save(this.state);
+          
+          let projectSelect = document.getElementById("project-select");
+          let proposalSelect = document.getElementById("proposal-select");
+          (projectSelect as HTMLSelectElement).disabled = true;
+          (proposalSelect as HTMLSelectElement).disabled = true; 
+          this.state = {
+            workspaceId: this.state.workspaceId,
+            projectId: this.state.projectId,
+            proposalId: proposals.value,
+          };
+          let message = document.getElementById("message");
+          message.className = "info";
+          message.textContent = "Sending datas to Forma...";
+          FormitFormaService.save(this.state, (success) => {
+            this.state = {
+              workspaceId: this.state.workspaceId,
+              projectId: this.state.projectId,
+              proposalId: proposals.value,
+            }
+            this.setStatus(false, success, success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
+            (projectSelect as HTMLSelectElement).disabled = false;
+            (proposalSelect as HTMLSelectElement).disabled = false; 
+          });
         };
       }      
+    }
+  }
+
+  setStatus(toInfo: boolean, success: boolean, message: string)   {
+    let messageElem = document.getElementById("message");
+    if(messageElem) {
+      if(toInfo) {
+        messageElem.className = "info";
+      }
+      else {
+        messageElem.className = success ? "success" : "error";
+        if(!success)
+        {
+          console.log(message)
+        }
+      }
+      messageElem.textContent = message;
     }
   }
 
@@ -172,7 +215,7 @@ export default class FormitForma extends Component<Props, State> {
             <option value=''>Select a proposal</option>
           </select>
           <button className="st" id="sync-btn" disabled>Sync</button>  
-          <label id="errorMessage" className="error" hidden></label>   
+          <label id="message" className="info"></label>   
         </div>
       </div>
     );

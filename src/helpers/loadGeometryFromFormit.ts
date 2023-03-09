@@ -56,9 +56,7 @@ const mergeMeshes = (meshes: FormitMesh[]): FormitMesh => {
 }
 
 export const formitGeometryToIntegrateAPIPayload = async (
-  offsetTransf3d: any,
-  formitGeometry: FormitGeometry[],
-  floorGeometriesByBuildingId: Record<string, FormitGeometry[]>,
+  formitGeometry: FormitGeometry[]
 ) => {
   const rootElement = {
     id: uuid.v4(),
@@ -77,16 +75,47 @@ export const formitGeometryToIntegrateAPIPayload = async (
     elements
   }
 
-  await buildElementsFromGeometry(formitGeometry, elements, rootElement, offsetTransf3d)
+  let transf3d = await WSM.Geom.Transf3d()
+  for (const geometry of formitGeometry) {
+    const mesh = optimizeMesh(mergeMeshes(geometry.meshes))
+    const element: Record<string, any> = {
+      id: uuid.v4(),
+      children: [],
+      properties: {
+        category: "ConceptualElement",
+        geometry: {
+          type: ReferenceType.INLINE,
+          format: "Mesh",
+          verts: mesh.vertices,
+          faces: mesh.indices,
+        }
+      }
+    }
 
-  for (const [, floorGeometries] of Object.entries(floorGeometriesByBuildingId)) {
-    await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
+    if (geometry.transforms[0].data) {
+      transf3d.data = geometry.transforms[0].data as Transform
+    }
+    
+    elements[element.id] = {
+      ...element,
+    }
+
+    rootElement.children.push({
+      id: element.id,
+      transform: transpose(transf3d.data),
+    })
   }
 
-  createLayer(MAIN_HISTORY_ID, formItLayerNames.FORMA_BUILDINGS)
-    .then(async (buildingsLayer) => {
-      await FormIt.Layers.DeleteLayers([buildingsLayer.formItLayerId])
-    });
+  //await buildElementsFromGeometry(formitGeometry, elements, rootElement, offsetTransf3d)
+
+  // for (const [, floorGeometries] of Object.entries(floorGeometriesByBuildingId)) {
+  //   await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
+  // }
+
+  // createLayer(MAIN_HISTORY_ID, formItLayerNames.FORMA_BUILDINGS)
+  //   .then(async (buildingsLayer) => {
+  //     await FormIt.Layers.DeleteLayers([buildingsLayer.formItLayerId])
+  //   });
 
   return payload
 }
@@ -115,8 +144,8 @@ async function buildElementsFromGeometry(
           format: "Mesh",
           verts: mesh.vertices,
           faces: mesh.indices,
-        },
-      },
+        }
+      }
     }
 
     if (isBuildingFloor) {

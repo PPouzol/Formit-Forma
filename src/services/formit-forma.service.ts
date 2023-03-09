@@ -56,7 +56,7 @@ class FormaSaveService {
   }: {
     projectId: string
     proposalId: string
-  }) {
+  }, callback: any) {
     const hasSomethingToSave = await FormIt.Model.IsModified();
   
     // returning early if there's nothing to save
@@ -78,7 +78,8 @@ class FormaSaveService {
               proposalId,
               projectId,
               polygonData,
-              objectId
+              objectId,
+              callback
             })
           });
         });
@@ -271,21 +272,16 @@ class FormaSaveService {
     return false
   }
 
-  generatePayload(formitGeometry, terrainElevationTransf3d, callback) {
-    getFloorGeometriesByBuildingId()
-      .then(async (floorGeometriesByBuildingId) => {
-        formitGeometryToIntegrateAPIPayload(
-          terrainElevationTransf3d,
-          formitGeometry,
-          floorGeometriesByBuildingId
-        )
-        .then((integrateAPIPayload) => {
-          if(callback)
-          {
-            callback(integrateAPIPayload);
-          }
-        });
-      });
+  generatePayload(formitGeometry, callback) {
+    formitGeometryToIntegrateAPIPayload(
+      formitGeometry
+    )
+    .then((integrateAPIPayload) => {
+      if(callback)
+      {
+        callback(integrateAPIPayload);
+      }
+    });
   }
   
   getWSMLayerID(histID, FormaLayerName) {
@@ -325,7 +321,7 @@ class FormaSaveService {
           console.error("Can't save temporary wsm file.");
           return;
         }
-        this.generatePayload(formitGeometry, WSM.Geom.Transf3d(), 
+        this.generatePayload(formitGeometry,
           async (integrateAPIPayload) => {
             this.generateStorageReference(saveContent, projectId, 
               async (spacemakerObjectStorageReferenceId) => {
@@ -342,10 +338,12 @@ class FormaSaveService {
                       authContext: projectId,
                       createdUrn: createdOrUpdatedElement.urn
                     })
-                    .then(() => {
+                    .then((success) => {
+                      debugger
+
                       if(callback)
                       {
-                        callback(createdOrUpdatedElement);
+                        callback(success);
                       }
                     })
                   }
