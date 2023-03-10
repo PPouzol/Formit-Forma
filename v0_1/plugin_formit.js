@@ -17,7 +17,6 @@ FormitPlugin.ShowDialog = function(){
 
 FormitPlugin.CloseDialog = function(){
     //close parent dialog window
-    WSM.Utils.ComputeGeometryFromLevels
     FormIt.CloseDialogBox();
 }
 

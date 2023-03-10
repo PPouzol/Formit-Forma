@@ -1,3 +1,4 @@
+import reactWcWrapper from "@spacemakerai/react-wc-wrapper"
 import { Component } from "react";
 import fetchResultObj from "../common/interfaces";
 import FormaService from "../services/forma.service";
@@ -10,6 +11,7 @@ type State = {
   projectId: any,
   proposalId: any,
 }
+
 
 export default class FormitForma extends Component<Props, State> {  
   constructor(props: Props) {
@@ -36,6 +38,7 @@ export default class FormitForma extends Component<Props, State> {
         option.innerHTML = result.name;
         select.appendChild(option);
       }
+      select.disabled = false;
       select!.addEventListener('change', listener);        
     }
     this.setStatus(true, false, "");
@@ -53,7 +56,7 @@ export default class FormitForma extends Component<Props, State> {
           return filledObj;
         });
         this.fillSelectOptions(workspaces, "workspace-select", this.handleWorkspaceSelectChange.bind(this));
-        this.handleWorkspaceSelectChange();
+          this.handleWorkspaceSelectChange();
       }
     } catch (error) {
       const errorTxt = "Unable to read workspaces";
@@ -206,12 +209,14 @@ export default class FormitForma extends Component<Props, State> {
           </select>
           <select id="project-select" 
                   className="fetchSelect" 
-                  defaultValue={""}>
+                  defaultValue={""}
+                  disabled>
             <option value=''>Select a project</option>
           </select>
           <select id="proposal-select" 
                   className="fetchSelect" 
-                  defaultValue={""} >
+                  defaultValue={""} 
+                  disabled>
             <option value=''>Select a proposal</option>
           </select>
           <button className="st" id="sync-btn" disabled>Sync</button>  

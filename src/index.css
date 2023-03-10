@@ -125,8 +125,8 @@ h4 {
 
 .alertIcon {
   background-color: gold;
-  -webkit-mask: url(images/alert.svg) no-repeat center;
-  mask: url(images/alert.svg) no-repeat center;
+  -webkit-mask: url(assets/alert.png) no-repeat center;
+  mask: url(assets/alert.png) no-repeat center;
 }
 
 .error {
