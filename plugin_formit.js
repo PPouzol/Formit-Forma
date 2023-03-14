@@ -32,7 +32,6 @@ FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
 }
 
 FormitPlugin.Multiply = function(args) {
-  debugger
   
   var offsetTransf3d = args[0];
   var transf3d = args[1];
@@ -43,4 +42,25 @@ FormitPlugin.ReadFile = function(args) {
   var filePath = args[0];
   var content = FormIt.readFile(filePath);
   return content;
+}
+
+FormitPlugin.GetIdOrCreate = function(args) {
+  var histID = args[0]
+  var layerName = args[1]
+  
+  FormIt.Layers.AddLayer(histID, layerName, true)
+  var formItLayerId = FormIt.Layers.GetLayerID(layerName)
+  var wsmLayerId
+  if (formItLayerId == WSM.INVALID_ID) {
+    console.error("Cannot retrieve the Forma layer")
+  } else {
+    // The WSM LayerID value is different from the FormIt LayerId
+    wsmLayerId = getWSMLayerID(histID, layerName)
+    if (wsmLayerId == WSM.INVALID_ID) {
+      console.error("Cannot retrieve the Forma WSM layer")
+      formItLayerId = undefined
+    }
+  }
+
+  return { formItLayerId, wsmLayerId };
 }
