@@ -65,3 +65,19 @@ FormitPlugin.GetIdOrCreate = function(args) {
   var result = [ formItLayerId, wsmLayerId ];
   return result;
 }
+
+
+function getWSMLayerID(histID, FormaLayerName) {
+  const aLayers = WSM.APIGetAllObjectsByTypeReadOnly(histID, WSM.nObjectType.nLayerType)
+  let wsmLayerId = WSM.INVALID_ID
+  for (let i = 0; i < aLayers.length; i++) {
+    const data = WSM.APIGetLayerDataReadOnly(histID, aLayers[i])
+
+    if (data.name == FormaLayerName) {
+      wsmLayerId = aLayers[i]
+      break
+    }
+  }
+
+  return wsmLayerId
+}
