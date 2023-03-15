@@ -62,5 +62,6 @@ FormitPlugin.GetIdOrCreate = function(args) {
     }
   }
 
-  return { formItLayerId, wsmLayerId };
+  var result = [ formItLayerId, wsmLayerId ];
+  return result;
 }
