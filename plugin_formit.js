@@ -70,7 +70,7 @@ FormitPlugin.GetIdOrCreate = function(args) {
 function getWSMLayerID(histID, FormaLayerName) {
   const aLayers = WSM.APIGetAllObjectsByTypeReadOnly(histID, WSM.nObjectType.nLayerType)
   var wsmLayerId = WSM.INVALID_ID
-  for (let i = 0; i < aLayers.length; i++) {
+  for (var i = 0; i < aLayers.length; i++) {
     const data = WSM.APIGetLayerDataReadOnly(histID, aLayers[i])
 
     if (data.name == FormaLayerName) {
