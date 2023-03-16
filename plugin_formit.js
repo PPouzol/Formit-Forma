@@ -32,7 +32,6 @@ FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
 }
 
 FormitPlugin.Multiply = function(args) {
-  
   var offsetTransf3d = args[0];
   var transf3d = args[1];
   return WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
