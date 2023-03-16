@@ -39,7 +39,7 @@ FormitPlugin.Multiply = function(args) {
 }
 
 FormitPlugin.ReadFile = function(args) {
-  let filePath = args[0];
+  var filePath = args[0];
   var content = FormIt.readFile(filePath);
   return content;
 }
