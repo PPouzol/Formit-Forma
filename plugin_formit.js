@@ -44,12 +44,13 @@ FormitPlugin.ReadFile = function(args) {
 }
 
 FormitPlugin.CreateTexture = function(args) {
-  window.FormItModule.FS_createDataFile("", args.imageFileLocation, args.data, true, true, true)
+  debugger
+  
+  Module.FS_createDataFile("", args.imageFileLocation, args.data, true, true, true)
   return FormIt.CreateTextureFromPath(MAIN_HISTORY_ID, args.imageFileLocation)
 }
 
 FormitPlugin.APILoadGltfFile = function(args) {
-  debugger
   //@ts-ignore
   WSM.Gltf.APILoadGltfFile(
     MAIN_HISTORY_ID,
