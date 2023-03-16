@@ -32,8 +32,6 @@ FormitPlugin.ComputeGeometryFromLevels = function(objectId) {
 }
 
 FormitPlugin.Multiply = function(args) {
-  debugger
-
   var offsetTransf3d = args[0];
   var transf3d = args[1];
   return WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
@@ -43,4 +41,18 @@ FormitPlugin.ReadFile = function(args) {
   var filePath = args[0];
   var content = FormIt.readFile(filePath);
   return content;
+}
+
+FormitPlugin.APILoadGltfFile = function(args) {
+  debugger
+  //@ts-ignore
+  WSM.Gltf.APILoadGltfFile(
+    MAIN_HISTORY_ID,
+    args.tempGlbLocation,
+    args.transf3d,
+    WSM.INVALID_ID,
+    true,
+    [],
+    false,
+  )
 }
