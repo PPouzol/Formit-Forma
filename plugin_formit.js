@@ -53,6 +53,6 @@ FormitPlugin.APILoadGltfFile = function(args) {
     WSM.INVALID_ID,
     true,
     [],
-    false,
+    false
   )
 }
