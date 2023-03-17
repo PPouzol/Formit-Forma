@@ -45,8 +45,6 @@ FormitPlugin.ReadFile = function(args) {
 
 FormitPlugin.APILoadGltfFile = function(args) {
   //@ts-ignore
-  debugger
-  
   WSM.Gltf.APILoadGltfFile(
     MAIN_HISTORY_ID,
     args.tempGlbLocation,
