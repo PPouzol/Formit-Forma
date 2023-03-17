@@ -1,4 +1,4 @@
-import { Component, createRef, useEffect } from "react";
+import { Component, createRef } from "react";
 import * as ReactDOMServer from 'react-dom/server';
 import './App.css'
 import Login from "./components/login.component";
@@ -8,10 +8,16 @@ import formitFormaService from "./services/formit-forma.service";
 type Props = {}
 
 declare global {
-  let WSM: any;
-  let FormIt: any;
   let FormItInterface: any;
   let FormitPlugin: any;
+  let FormIt: any;
+  let WSM: any;
+  // interface window {
+  //   FormIt: any,
+  //   FormItModule: any,
+  //   WSM: any,
+  //   FormItReceiveCoreMessage: (payload?: any) => void
+  // }
 }
 
 class App extends Component<Props> {

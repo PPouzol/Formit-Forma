@@ -19,3 +19,30 @@ export const parseUrn = (
   }
   throw new Error("urn is not of length 5 or 6")
 }
+
+export const elementUrnToUrl = (
+  elementSetUrn: string | NextGenElementUrn,
+  projectId: string,
+  includeIdSuffix = true,
+) => {
+  let elementUrl: string
+
+  const { authcontext, system, id, revision } = parseUrn(elementSetUrn)
+
+  if (authcontext) {
+    if (includeIdSuffix) {
+      elementUrl = `/api/${system}/elements/${id}/revisions/${revision}?authcontext=${authcontext}&version=2`
+    } else {
+      const suffixIndex = id.indexOf("+")
+      elementUrl = `/api/${system}/elements/${id.slice(
+        0,
+        suffixIndex,
+      )}/revisions/${revision}?authcontext=${authcontext}&version=2`
+    }
+    //TODO FUTURE_DELETE handling for classic type
+  } else {
+    elementUrl = `/api/${system}/elements/${id}/revisions/${revision}?projectId=${projectId}`
+  }
+
+  return elementUrl
+}

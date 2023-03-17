@@ -1,4 +1,11 @@
 
+import {
+  BaseProperties,
+  Transform,
+  Urn,
+  BaseElement
+} from "@spacemakerai/element-types"
+
 type Point = [number, number]
 export type Polygon = Point[]
 export type MultiRingPolygon = Polygon[]
@@ -28,9 +35,52 @@ export type FormitGeometry = {
   transforms: FormitTransform[]
 }
 
+export type ElementDetails = {
+  id: string
+  geometryId: string
+  transform: Transform
+  properties: BaseProperties
+  urn: Urn
+}
+
+export type CreatedObjectDetails = {
+  idArray?: Array<number>
+  isTerrain?: boolean
+  isAxm?: boolean
+  isEditing?: boolean
+  elementPath?: string
+}
+
+export type Project = {
+  name: string
+  id: string
+  countryCode: string
+  customerId: string
+}
+
+export type InitialState = {
+  isFormItCoreReady: boolean
+}
+
+export type ElementDetailsWithLoadInfo = {
+  fullIdPath: string
+  needsConverted: boolean
+} & ElementDetails
+
+
+type GlbUrlDetails = { transform: any; children: Array<ElementDetails> }
+type ElementMap = { [key: string]: GlbUrlDetails & { needsToBeConverted?: boolean } }
+type GlbPathMap = { [key: string]: ElementMap }
+export type GlbUrlMap = { [key: string]: { elements: Array<ElementDetailsWithLoadInfo> } }
+
+export type InternalPath = string
+export type AxmDetail = BaseElement & { parentTransform: Transform; path: InternalPath }
+export type AxmList = Array<AxmDetail>
+
 export const MAIN_HISTORY_ID = 0;
 export const METERS_TO_FEET = 3.2808399
 export const FEET_TO_METER = 0.3047999995367042
+export const ROOT_KEY = "root"
 
 export const formItLayerNames = {
   FORMA_CONTEXT: "Forma Context",

@@ -61,6 +61,10 @@ export default defineConfig({
       "/app": {
         target: "https://app.spacemaker.ai/",
         changeOrigin: true,
+      },
+      "/texture": {
+        target: "https://app.spacemaker.ai/",
+        changeOrigin: true,
       }
     }
   }

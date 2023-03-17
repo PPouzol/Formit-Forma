@@ -31,6 +31,41 @@ class FormaService {
       return res.json();
     });
   }
+
+  fetchRawDatas(url: string) {
+    if(url.indexOf('/') === 0)
+    {
+      url = `${API_URL}${url}`
+    }
+    return fetch(url, {
+      
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": "true",
+      },
+    })
+  }
+
+  getAsJson(url: string) {
+    if(url.indexOf('/') === 0)
+    {
+      url = `${API_URL}${url}`
+    }
+    return fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": "true",
+      },
+    })
+    .then(res => {
+      if (res.ok) {
+        return res.json()
+      }
+      return false
+    });
+  }
 }
 
 export default new FormaService();
