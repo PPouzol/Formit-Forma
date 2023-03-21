@@ -31,6 +31,10 @@ class FormaService {
       return res.json();
     });
   }
+
+  FormatThumbnailUrl(projectId: string, urn: string) {
+    return `${API_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
+  }
 }
 
 export default new FormaService();

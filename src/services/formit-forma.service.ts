@@ -209,8 +209,6 @@ class FormaSaveService {
   // This saves the top history by ending edit in context. So
   // do NOT call this except when ending the submode.
   async saveTemp(objectId, historyId) {
-    debugger
-    
     await FormIt.GroupEdit.EndEditInContext();
     await FormIt.Selection.SelectAll();
     //success = await FormIt.SaveFile(filePath, FormIt.SaveOptions.AllObjects);
