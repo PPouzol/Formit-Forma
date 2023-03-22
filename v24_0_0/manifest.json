@@ -1,6 +1,0 @@
-{
-    "PluginName": "FormitForma",
-    "PluginDescription": "Connection between Formit and Forma environment",
-    "Platforms": ["Windows"],
-    "DLLs" : ["PLUGINLOCATION/FormItFormaAddIn.dll"]
-}
