@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import './App.css'
-import * as ReactDOMServer from 'react-dom/server';
 import Login from "./components/login.component";
-import FormitFormaNew from "./components/forma.component";
 import FormitForma from "./components/forma.component";
 import formitFormaService from "./services/formit-forma.service";
 
@@ -27,7 +25,7 @@ function compileFromCookie() {
     // add nothing, dialog box will be displayed to login
     node = <div id="LoginControls" className="">
               <h4>Start plugin to select a project</h4>
-              <button id="LoginButton" className="button is-link">
+              <button id="LoginButton" className="button is-link" onClick={Login.login}>
                 <span>Start plugin</span>
                 <i className="fab fa-github fa-lg"></i>
               </button>
@@ -52,12 +50,6 @@ function App() {
       setLoggedIn(logContent.loggedIn);
       setContent(logContent.node!)
     }
-
-    let loginButton = document.getElementById("LoginButton");
-    if(loginButton !== null)
-    {
-      loginButton.onclick = Login.login;
-    }  
   }, [])
 
   return (

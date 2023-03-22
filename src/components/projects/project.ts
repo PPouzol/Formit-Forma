@@ -1,5 +1,5 @@
 import fetchResultObj from "../../common/interfaces";
-import Proposal from "../proposal/proposal"
+import Proposal from "../proposals/proposal"
 
 export default class Project extends fetchResultObj {
     public projectId: string;

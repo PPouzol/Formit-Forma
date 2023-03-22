@@ -1,8 +1,0 @@
-{
-    "PluginName": "Formit <> Forma",
-    "PluginDescription": "Connection between Formit and Forma environment",
-    "PluginType": "Panel",
-    "Panel": "PLUGINLOCATION/index.html",
-    "PanelIcon": "PLUGINLOCATION/assets/sync.png",
-    "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ]
-}

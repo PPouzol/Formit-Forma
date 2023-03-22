@@ -5,6 +5,7 @@ import ProjectList from "./projects/project-list.component";
 import Project from "./projects/project"
 import Proposal from "./proposals/proposal"
 import FormitFormaService from "../services/formit-forma.service";
+import { noop } from "lodash-es";
 
 function FormitForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -144,12 +145,18 @@ function FormitForma() {
     if(syncButton !== null)
     {
       (syncButton as HTMLButtonElement).disabled = !hasSomethingToSave || !idsProvided;
+      if(syncButton.onclick === noop || !syncButton.onclick)
+      {
+        syncButton.onclick = onSyncClick;
+      }
     }     
   }
 
   function onSyncClick() {
-    let container = document.getElementById("plugin-container");
-    container.setAttribute('disabled','disabled');
+    debugger
+    
+    // let container = document.getElementById("plugin-container");
+    // container.setAttribute('disabled','disabled');
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Sending datas to Forma...";
@@ -160,7 +167,7 @@ function FormitForma() {
       }, 
       (success) => {
         this.setStatus(false, success, success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
-        container.removeAttribute('disabled');
+        //container.removeAttribute('disabled');
       }
     );
   }
@@ -206,7 +213,7 @@ function FormitForma() {
           selectedProposalId={proposalId}>
         </ProjectList>
         <div id="action">
-          <button className="st" id="sync-btn" onClick={onSyncClick} disabled>Sync</button>  
+          <button className="st" id="sync-btn" disabled>Sync</button>  
           <label id="message" className={statusType}>{statusMessage}</label>   
         </div>
       </div>
