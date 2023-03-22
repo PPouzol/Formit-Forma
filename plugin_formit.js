@@ -1,6 +1,6 @@
 const MAIN_HISTORY_ID = 0;
 
-FormitPlugin = { FormaAddIn: {}};
+FormitPlugin = {};
 
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
 FormitPlugin.ShowDialog = function(){
@@ -15,22 +15,6 @@ FormitPlugin.ShowDialog = function(){
 
     FormIt.CreateDialogBox(JSON.stringify(dialogParams));
 }
-
-FormitPlugin.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
-  args = {
-      TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
-      OptimizeGeometries:bSelectedOnly
-  };
-  return callAsyncAPI(args);
-};
-
-FormitPlugin.FormaAddIn.DeleteTempFile = function(path) {
-  args = {
-      TestAPI: "FormIt.FormaAddIn.DeleteTempFile",
-      OptimizeGeometries:path
-  };
-  return callAsyncAPI(args);
-};
 
 FormitPlugin.CloseDialog = function(){
     //close parent dialog window
