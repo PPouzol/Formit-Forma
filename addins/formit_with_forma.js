@@ -1,12 +1,9 @@
 FormIt.FormaAddIn = window.FormIt.FormaAddIn || {};
 
-FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly, callback) {
-    debugger
-
+FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
     args = {
         TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
         OptimizeGeometries:bSelectedOnly,
-        callback
     };
     return callAsyncAPI(args);
 };
