@@ -1,6 +1,6 @@
-FormIt.FormaAddIn = FormIt.FormaAddIn || {};
+window.FormIt.FormaAddIn = window.FormIt.FormaAddIn || {};
 
-FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
+window.FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
     args = {
         TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
         OptimizeGeometries:bSelectedOnly,
@@ -12,7 +12,7 @@ FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
     return result;
 };
 
-FormIt.FormaAddIn.DeleteTempFile = function(path) {
+window.FormIt.FormaAddIn.DeleteTempFile = function(path) {
     args = {
         TestAPI: "FormIt.FormaAddIn.DeleteTempFile",
         OptimizeGeometries:path
