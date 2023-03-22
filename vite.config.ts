@@ -9,7 +9,7 @@ export default defineConfig({
   root: '.',
   base: './',
   build: {
-    outDir: './build',
+    outDir: './v0_1',
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
@@ -23,36 +23,20 @@ export default defineConfig({
       targets: [
         {
           src: './manifest.json',
-          dest: './v24_0_0',
+          dest: '.',
           rename: 'manifest.json',
         },
         {
           src: './src/assets',
-          dest: './v24_0_0/assets'
-        },
-        {
-          src: './src/addins/*',
-          dest: './v24_0_0'
-        },
-        {
-          src: './plugin_formit.js',
-          dest: './v24_0_0'
-        },
-        {
-          src: './README.md',
-          dest: './v24_0_0'
-        },
-        {
-          src: './dlls/*',
-          dest: './v24_0_0'
-        },
-        {
-          src: './versions.json',
           dest: '.'
         },
         {
-          src: './*.html',
-          dest: './v24_0_0'
+          src: './plugin_formit.js',
+          dest: '.'
+        },
+        {
+          src: './README.md',
+          dest: '.'
         }
       ]
     })

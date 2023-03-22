@@ -57,7 +57,7 @@ function FormitForma() {
           return filledObj;
         });
 
-      await fillProposals(projectsResults);
+      setProjects(projectsResults);
       setMessageType("info");
       setMessage("");
     } catch (error) {
@@ -68,50 +68,58 @@ function FormitForma() {
     }
   }
 
-  async function fillProposals(projectsResults) {
+  async function fillProposals(projectId) {
     try {
       setMessageType("info");
       setMessage("Fetching proposals...");
+      let projectProposals: Proposal[];
 
-      for(const project of projectsResults) {
-        await FormaService.getProposals(project.projectId)
-          .then( (proposals) => {
-            project.proposals = proposals.map((e: any) => {
-              var proposal = new Proposal()
-              const split = e.urn.split(":");
-              let id = split[split.length - 2];
-              let revision = split[split.length - 1];
-              let name = e.properties.name;
-              proposal.Fill(id, name, revision, e.metadata, e.urn);
-              let creationDate = new Date(e.metadata.createdAt);              
-              let hour = creationDate.getHours();
-              let minutes = creationDate.getMinutes();
-              if(creationDate.getDate() === new Date().getDate())
-              {
-                proposal.creationDate = `Today ${hour}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
-              }
-              else
-              {
-                proposal.creationDate = `${creationDate.toLocaleString()}`;
-              }
-              proposal.projectId = project.projectId;
-              return proposal;
-            });
-            project.proposals.sort(function(proposalA,proposalB){
-              return new Date(proposalA.metadata.createdAt).getTime() - new Date(proposalB.metadata.createdAt).getTime();
-            });
-            if(project.proposals.length > 0)
+      await FormaService.getProposals(projectId)
+        .then( (proposals) => {
+            projectProposals = proposals.map((e: any) => {
+            var proposal = new Proposal()
+            const split = e.urn.split(":");
+            let id = split[split.length - 2];
+            let revision = split[split.length - 1];
+            let name = e.properties.name;
+            proposal.Fill(id, name, revision, e.metadata, e.urn);
+            let creationDate = new Date(e.metadata.createdAt);              
+            let hour = creationDate.getHours();
+            let minutes = creationDate.getMinutes();
+            if(creationDate.getDate() === new Date().getDate())
             {
-              project.newestProposalId = project.proposals[0].id;
-              project.urn = project.proposals[0].urn;
-              project.proposalCount = project.proposals.length;
+              proposal.creationDate = `Today ${hour}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
             }
-            project.proposalsListContainer = `project-${project.projectId}-proposals-list`
+            else
+            {
+              proposal.creationDate = `${creationDate.toLocaleString()}`;
+            }
+            proposal.projectId = projectId;
+            return proposal;
           });
+          projectProposals.sort(function(proposalA,proposalB){
+            return new Date(proposalA.metadata.createdAt).getTime() - new Date(proposalB.metadata.createdAt).getTime();
+          });
+        });
+
+      projects.forEach(project => {
+        if(project.projectId === projectId)
+        {
+          project.proposals = projectProposals;
+          
+          if(projectProposals.length > 0)
+          {
+            project.newestProposalId = project.proposals[0].id;
+            project.urn = project.proposals[0].urn;
+            project.proposalCount = project.proposals.length;
+          }
+          project.proposalsListContainer = `project-${project.projectId}-proposals-list`
         }
-        setProjects(projectsResults);
-        setMessageType("info");
-        setMessage("");
+      });
+
+      setProjects(projects);
+      setMessageType("info");
+      setMessage("");
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
       setMessageType("error");
@@ -172,6 +180,21 @@ function FormitForma() {
     );
   }
 
+  function selectProject(projectId) {
+    debugger
+
+    projects.forEach(project => {
+      if(project.projectId === projectId)
+      {
+        if(!project.proposals)
+        {
+          fillProposals(projectId);
+        }
+      }
+    });
+    setCurrentProjectId(projectId);
+  }
+
   const [statusMessage, setMessage] = useState("")
   const [statusType, setMessageType] = useState("info")
   // workspaces
@@ -207,7 +230,7 @@ function FormitForma() {
         </select>
         <ProjectList 
           projects={projects}
-          projectSelectionHandler={setCurrentProjectId}
+          projectSelectionHandler={selectProject}
           proposalSelectionHandler={setSelectedProposalId}
           selectedProjectId={projectId}
           selectedProposalId={proposalId}>

@@ -1,4 +1,5 @@
 const API_URL = 'https://local.spacemaker.ai:3001';
+const SPACEMAKER_URL = 'https://app.spacemaker.ai';
 
 class FormaService {
   getWorkspaces() {
