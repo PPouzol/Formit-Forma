@@ -3,17 +3,19 @@ window.FormIt.FormaAddIn = window.FormIt.FormaAddIn || {};
 window.FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
     args = {
         TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
-        bSelectedOnly:bSelectedOnly
+        OptimizeGeometries:bSelectedOnly,
     };
-    return callAsyncAPI(args);
+
+    debugger
+    
+    var result = callAsyncAPI(args);
+    return result;
 };
 
-window.FormIt.FormaAddIn.DeleteTempFile = function(aPath) {
+window.FormIt.FormaAddIn.DeleteTempFile = function(path) {
     args = {
         TestAPI: "FormIt.FormaAddIn.DeleteTempFile",
-        aPath:aPath
+        OptimizeGeometries:path
     };
     return callAsyncAPI(args);
 };
-
-
