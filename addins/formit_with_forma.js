@@ -5,7 +5,11 @@ FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
         TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
         OptimizeGeometries:bSelectedOnly,
     };
-    return callAsyncAPI(args);
+
+    debugger
+    
+    var result = callAsyncAPI(args);
+    return result;
 };
 
 FormIt.FormaAddIn.DeleteTempFile = function(path) {
