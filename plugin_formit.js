@@ -15,7 +15,7 @@ FormitPlugin.ShowDialog = function(){
     FormIt.CreateDialogBox(JSON.stringify(dialogParams));
 }
 
-window.FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
+FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
   args = {
       TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
       OptimizeGeometries:bSelectedOnly
@@ -23,7 +23,7 @@ window.FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
   return callAsyncAPI(args);
 };
 
-window.FormIt.FormaAddIn.DeleteTempFile = function(path) {
+FormIt.FormaAddIn.DeleteTempFile = function(path) {
   args = {
       TestAPI: "FormIt.FormaAddIn.DeleteTempFile",
       OptimizeGeometries:path
