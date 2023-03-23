@@ -14,14 +14,13 @@ interface Props {
 
 function ProjectComponent(props: Props) {
     const { project, projectSelectionHandler, proposalSelectionHandler, isSelected, selectedProposalId } = props;
-
     const projectThumbnail = FormaService.FormatThumbnailUrl(project.projectId, project.urn);
 
     return (
     <>
         <ProjectS.Container
             onClick={() => { 
-                projectSelectionHandler(isSelected ? "" : project.id); 
+                projectSelectionHandler(project.id); 
             }}>
             <ProjectS.Content id={project.projectId} 
                 className={isSelected ? "project selected" : "project"}>

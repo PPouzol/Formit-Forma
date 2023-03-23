@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import * as ProposalS from "./proposal-style"
 import FormaService from "../../services/forma.service"
 import Proposal from "./proposal"
@@ -11,17 +11,16 @@ interface Props {
 
 function ProposalComponent(props: Props) {
     const { proposal, proposalSelectionHandler, isSelected } = props;
-
     const thumbnail = FormaService.FormatThumbnailUrl(proposal.projectId, proposal.urn);
 
     return (
     <>
         <ProposalS.Container 
             onClick={() => { 
-                proposalSelectionHandler(isSelected ? "" : proposal.id); 
+                proposalSelectionHandler(proposal.id); 
             }}>
             <ProposalS.Content 
-                id={proposal.projectId} 
+                id={proposal.proposalId} 
                 className={isSelected ? "proposal selected" : "proposal"} >
                 <ProposalS.InfosContainer className="infos">
                     <ProposalS.ThumbnailContainer>

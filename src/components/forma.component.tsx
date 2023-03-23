@@ -47,25 +47,17 @@ function FormitForma() {
         .filter((e: any) => {
           return e.metadata !== null && !e.metadata.isDraft && e.version !== 1
         })
-        .map(async (e: any) => {
+        .map((e: any) => {
           var filledObj = new Project()
           filledObj.Fill(e.id, e.name, e.version, e.metadata);
           let nowTime = new Date().getTime();
           let creationTimeDiff = nowTime - e.created;
           let dayCount = Math.floor(creationTimeDiff / (1000*24*60*60));
           filledObj.creationTime = dayCount == 0 ? `Today` : `${dayCount} days ago`;
-
-          await FormaService.countProposals(filledObj.projectId)
-            .then( (count) => {
-              filledObj.proposalCount = count;
-            });
-
           return filledObj;
         });
 
-      let projects = await Promise.all(projectsResults)
-
-      setProjects(projects);
+      await fillProposals(projectsResults);
       setMessageType("info");
       setMessage("");
     } catch (error) {
@@ -76,57 +68,50 @@ function FormitForma() {
     }
   }
 
-  async function fillProposals(projectId) {
+  async function fillProposals(projectsResults) {
     try {
       setMessageType("info");
       setMessage("Fetching proposals...");
-      let projectProposals: Proposal[];
 
-      await FormaService.getProposals(projectId)
-        .then( (proposals) => {
-            projectProposals = proposals.map((e: any) => {
-            var proposal = new Proposal()
-            const split = e.urn.split(":");
-            let id = split[split.length - 2];
-            let revision = split[split.length - 1];
-            let name = e.properties.name;
-            proposal.Fill(id, name, revision, e.metadata, e.urn);
-            let creationDate = new Date(e.metadata.createdAt);              
-            let hour = creationDate.getHours();
-            let minutes = creationDate.getMinutes();
-            if(creationDate.getDate() === new Date().getDate())
+      for(const project of projectsResults) {
+        await FormaService.getProposals(project.projectId)
+          .then( (proposals) => {
+            project.proposals = proposals.map((e: any) => {
+              var proposal = new Proposal()
+              const split = e.urn.split(":");
+              let id = split[split.length - 2];
+              let revision = split[split.length - 1];
+              let name = e.properties.name;
+              proposal.Fill(id, name, revision, e.metadata, e.urn);
+              let creationDate = new Date(e.metadata.createdAt);              
+              let hour = creationDate.getHours();
+              let minutes = creationDate.getMinutes();
+              if(creationDate.getDate() === new Date().getDate())
+              {
+                proposal.creationDate = `Today ${hour}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
+              }
+              else
+              {
+                proposal.creationDate = `${creationDate.toLocaleString()}`;
+              }
+              proposal.projectId = project.projectId;
+              return proposal;
+            });
+            project.proposals.sort(function(proposalA,proposalB){
+              return new Date(proposalA.metadata.createdAt).getTime() - new Date(proposalB.metadata.createdAt).getTime();
+            });
+            if(project.proposals.length > 0)
             {
-              proposal.creationDate = `Today ${hour}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
+              project.newestProposalId = project.proposals[0].id;
+              project.urn = project.proposals[0].urn;
+              project.proposalCount = project.proposals.length;
             }
-            else
-            {
-              proposal.creationDate = `${creationDate.toLocaleString()}`;
-            }
-            proposal.projectId = projectId;
-            return proposal;
+            project.proposalsListContainer = `project-${project.projectId}-proposals-list`
           });
-          projectProposals.sort(function(proposalA,proposalB){
-            return new Date(proposalA.metadata.createdAt).getTime() - new Date(proposalB.metadata.createdAt).getTime();
-          });
-        });
-
-      projects.forEach(project => {
-        if(project.projectId === projectId)
-        {
-          project.proposals = projectProposals;
-          
-          if(projectProposals.length > 0)
-          {
-            project.newestProposalId = project.proposals[0].id;
-            project.urn = project.proposals[0].urn;
-          }
-          project.proposalsListContainer = `project-${project.projectId}-proposals-list`
         }
-      });
-
-      setProjects(projects);
-      setMessageType("info");
-      setMessage("");
+        setProjects(projectsResults);
+        setMessageType("info");
+        setMessage("");
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
       setMessageType("error");
@@ -151,19 +136,18 @@ function FormitForma() {
     }
   }
 
-  async function setSelectedProposalId(newProposalId)
-  {
-    setCurrentProposalId(newProposalId);
+  async function setSelectedProjectId(newProjectId) {
+    setCurrentProjectId(projectId === newProjectId ? "" : newProjectId);
+  }
+
+  async function setSelectedProposalId(newProposalId) {
+    setCurrentProposalId(proposalId === newProposalId ? "" : newProposalId);
     const hasSomethingToSave = await FormIt.Model.IsModified();
     const idsProvided = projectId !== "" && newProposalId !== "";
     let syncButton = document.getElementById("sync-btn");
     if(syncButton !== null)
     {
       (syncButton as HTMLButtonElement).disabled = !hasSomethingToSave || !idsProvided;
-      if(syncButton.onclick === noop || !syncButton.onclick)
-      {
-        syncButton.onclick = onSyncClick;
-      }
     }     
   }
 
@@ -186,19 +170,6 @@ function FormitForma() {
     );
   }
 
-  function selectProject(projectId) {
-    projects.forEach(project => {
-      if(project.projectId === projectId)
-      {
-        if(!project.proposals)
-        {
-          fillProposals(projectId);
-        }
-      }
-    });
-    setCurrentProjectId(projectId);
-  }
-
   const [statusMessage, setMessage] = useState("")
   const [statusType, setMessageType] = useState("info")
   // workspaces
@@ -214,11 +185,19 @@ function FormitForma() {
     setMessage("Fetching worskpaces...");
     handleFetchValues(FormaService.getWorkspaces(), 
           handleWorkspacesFetchedValues.bind(this));
+
+    // on start, disable the button. 
+    // this must be done here, as adding disabled to the default return will prevent binding onSyncClick
+    let syncButton = document.getElementById("sync-btn");
+    if(syncButton !== null)
+    {
+      (syncButton as HTMLButtonElement).disabled = true;
+    }     
   }, [])
 
 	return (
     <div id="FormaControls" className="col-md-12">
-      <div id="plugin-container" className="plugin">
+      <div className="plugin plugin-container">
         <h3 id="identifier">Welcome to Formit-Forma plugin</h3>
         <select id="workspace-select" 
             className="fetchSelect" 
@@ -234,13 +213,13 @@ function FormitForma() {
         </select>
         <ProjectList 
           projects={projects}
-          projectSelectionHandler={selectProject}
+          projectSelectionHandler={setSelectedProjectId}
           proposalSelectionHandler={setSelectedProposalId}
           selectedProjectId={projectId}
           selectedProposalId={proposalId}>
         </ProjectList>
         <div id="action">
-          <button className="st" id="sync-btn" disabled>Sync</button>  
+          <button className="st" id="sync-btn" onClick={onSyncClick}>Sync</button>  
           <label id="message" className={statusType}>{statusMessage}</label>   
         </div>
       </div>

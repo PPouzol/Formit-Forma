@@ -9,10 +9,6 @@ declare global {
   let FormIt: any;
   let FormItInterface: any;
   let FormitPlugin: any;
-  interface window {
-    activeProjectId,
-    activeProposalId
-  }
 }
 
 function compileFromCookie() {
