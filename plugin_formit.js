@@ -1,7 +1,6 @@
 const MAIN_HISTORY_ID = 0;
 
 FormitPlugin = {};
-
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
 FormitPlugin.ShowDialog = function(){
     var dialogParams = {
