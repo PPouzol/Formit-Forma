@@ -47,17 +47,25 @@ function FormitForma() {
         .filter((e: any) => {
           return e.metadata !== null && !e.metadata.isDraft && e.version !== 1
         })
-        .map((e: any) => {
+        .map(async (e: any) => {
           var filledObj = new Project()
           filledObj.Fill(e.id, e.name, e.version, e.metadata);
           let nowTime = new Date().getTime();
           let creationTimeDiff = nowTime - e.created;
           let dayCount = Math.floor(creationTimeDiff / (1000*24*60*60));
           filledObj.creationTime = dayCount == 0 ? `Today` : `${dayCount} days ago`;
+
+          await FormaService.countProposals(filledObj.projectId)
+            .then( (count) => {
+              filledObj.proposalCount = count;
+            });
+
           return filledObj;
         });
 
-      setProjects(projectsResults);
+      let projects = await Promise.all(projectsResults)
+
+      setProjects(projects);
       setMessageType("info");
       setMessage("");
     } catch (error) {
@@ -111,7 +119,6 @@ function FormitForma() {
           {
             project.newestProposalId = project.proposals[0].id;
             project.urn = project.proposals[0].urn;
-            project.proposalCount = project.proposals.length;
           }
           project.proposalsListContainer = `project-${project.projectId}-proposals-list`
         }
@@ -161,10 +168,8 @@ function FormitForma() {
   }
 
   function onSyncClick() {
-    debugger
-    
-    // let container = document.getElementById("plugin-container");
-    // container.setAttribute('disabled','disabled');
+    let container = document.getElementById("projectlist-container");
+    container.classList.add('disabled');
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Sending datas to Forma...";
@@ -174,15 +179,14 @@ function FormitForma() {
         proposalId
       }, 
       (success) => {
-        this.setStatus(false, success, success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
-        //container.removeAttribute('disabled');
+        setMessageType(success ? "success" : "error");
+        setMessage(success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
+        container.classList.remove('disabled');
       }
     );
   }
 
   function selectProject(projectId) {
-    debugger
-
     projects.forEach(project => {
       if(project.projectId === projectId)
       {
@@ -214,7 +218,7 @@ function FormitForma() {
 
 	return (
     <div id="FormaControls" className="col-md-12">
-      <div className="plugin plugin-container">
+      <div id="plugin-container" className="plugin">
         <h3 id="identifier">Welcome to Formit-Forma plugin</h3>
         <select id="workspace-select" 
             className="fetchSelect" 

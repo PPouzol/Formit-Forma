@@ -14,7 +14,7 @@ label {
   padding-top: 15px;
 }
 
-.plugin-container.plugin {
+.plugin {
   max-width: 350px !important;
 }
 
@@ -50,4 +50,9 @@ label {
 
 .selected {
   border: 1.5px solid rgb(98, 148, 249);
+}
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.4;
 }
