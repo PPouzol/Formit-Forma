@@ -1,9 +1,9 @@
 {
-    "PluginName": "Formit <> Forma",
+    "PluginName": "Formit-Forma",
     "PluginDescription": "Connection between Formit and Forma environment",
     "PluginType": "Panel",
     "Panel": "PLUGINLOCATION/index.html",
     "PanelIcon": "PLUGINLOCATION/assets/sync.png",
-    "Platforms": ["Windows"],
-    "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ]
+    "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ],
+    "DLLs": [ "PLUGINLOCATION/addins/FormItFormaAddIn.dll" ]
 }
