@@ -44,3 +44,20 @@ FormitPlugin.ReadFile = function(args) {
   var content = FormIt.readFile(filePath);
   return content;
 }
+
+
+FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
+  args = {
+      TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
+      bSelectedOnly:bSelectedOnly
+  };
+  return callAsyncAPI(args);
+};
+
+FormIt.FormaAddIn.DeleteTempFile = function(path) {
+  args = {
+      TestAPI: "FormIt.FormaAddIn.DeleteTempFile",
+      bSelectedOnly:path
+  };
+  return callAsyncAPI(args);
+};
