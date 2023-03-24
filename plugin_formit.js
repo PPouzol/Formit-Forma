@@ -1,3 +1,5 @@
+debugger
+
 FormitPlugin = {};
 FormIt.FormaAddIn = FormIt.FormaAddIn || {};
 
