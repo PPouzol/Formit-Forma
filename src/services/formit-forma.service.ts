@@ -3,7 +3,6 @@ import { Child, ElementResponse } from "@spacemakerai/element-types"
 import { formitGeometryToIntegrateAPIPayload } from "../helpers/loadGeometryFromFormit"
 import { parseUrn } from "../helpers/elementUtils"
 import { MultiRingPolygon, MAIN_HISTORY_ID, FEET_TO_METER, formItLayerNames, Polygon } from "../helpers/typesAndConstants"
-import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
 import * as uuid from "uuid"
 
 class FormaSaveService {
@@ -56,12 +55,7 @@ class FormaSaveService {
   }: {
     projectId: string
     proposalId: string
-  }, callback: any) {
-    const hasSomethingToSave = await FormIt.Model.IsModified();
-  
-    // returning early if there's nothing to save
-    if (!hasSomethingToSave) return
-  
+  }, callback: any) {  
     // Make sure each top level body and mesh is put into its own instance.
     // The code assumes that levels are only applied to instances at this
     // point. If that is incorrect, we'll need to move the levels from bodies
@@ -209,11 +203,9 @@ class FormaSaveService {
   // This saves the top history by ending edit in context. So
   // do NOT call this except when ending the submode.
   async saveTemp(objectId, historyId) {
-    debugger
-    
     await FormIt.GroupEdit.EndEditInContext();
     await FormIt.Selection.SelectAll();
-    //success = await FormIt.SaveFile(filePath, FormIt.SaveOptions.AllObjects);
+
     var saveString = await WSM.APISaveToStringReadOnly(historyId, [objectId]);
     await FormIt.Selection.ClearSelections();
 

@@ -1,17 +1,19 @@
 export default class fetchResultObj {
     public id: string;
+    public urn: string;
     public name: string;
     public metadata: any;
     public version: string;
 
     constructor() {
         this.id = '';
+        this.urn = '';
         this.name = '';
         this.version = '1';
         this.metadata = null;
     }
 
-    Fill(_id: string, _name: string, _version: string, _metadata: any) {
+    Fill(_id: string, _name: string, _version: string, _metadata: any, _urn: string) {
         this.id = _id;
         this.version = _version;
         if(_name === null || _name === '')
@@ -23,6 +25,7 @@ export default class fetchResultObj {
         {
             this.name = _name;
         }
+        this.urn = _urn;
         this.metadata = _metadata;
     }
 }

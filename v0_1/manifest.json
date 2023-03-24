@@ -3,6 +3,7 @@
     "PluginDescription": "Connection between Formit and Forma environment",
     "PluginType": "Panel",
     "Panel": "PLUGINLOCATION/index.html",
-    "PanelIcon": "PLUGINLOCATION/assets/react.svg",
+    "PanelIcon": "PLUGINLOCATION/assets/sync.png",
+    "Platforms": ["Windows"],
     "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ]
 }
