@@ -1,7 +1,5 @@
 const MAIN_HISTORY_ID = 0;
 
-FormIt.FormaAddIn = FormIt.FormaAddIn || {}
-
 FormitPlugin = {};
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
 FormitPlugin.ShowDialog = function(){
@@ -46,7 +44,7 @@ FormitPlugin.ReadFile = function(args) {
 }
 
 
-FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
+FormitPlugin.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
   args = {
       TestAPI: "FormIt.FormaAddIn.SaveCurrentAXMtoTemp",
       bSelectedOnly:bSelectedOnly
@@ -54,7 +52,7 @@ FormIt.FormaAddIn.SaveCurrentAXMtoTemp = function(bSelectedOnly) {
   return callAsyncAPI(args);
 };
 
-FormIt.FormaAddIn.DeleteTempFile = function(path) {
+FormitPlugin.DeleteTempFile = function(path) {
   args = {
       TestAPI: "FormIt.FormaAddIn.DeleteTempFile",
       bSelectedOnly:path
