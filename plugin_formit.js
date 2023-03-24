@@ -1,6 +1,6 @@
 const MAIN_HISTORY_ID = 0;
 
-window.FormIt.FormaAddIn = window.FormIt.FormaAddIn || {}
+FormIt.FormaAddIn = FormIt.FormaAddIn || {}
 
 FormitPlugin = {};
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
