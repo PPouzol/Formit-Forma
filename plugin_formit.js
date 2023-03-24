@@ -1,7 +1,8 @@
+FormitPlugin = {};
+window.FormIt.FormaAddIn = window.FormIt.FormaAddIn || {};
+
 const MAIN_HISTORY_ID = 0;
 
-FormIt.FormaAddIn = FormIt.FormaAddIn || {};
-FormitPlugin = {};
 
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
 FormitPlugin.ShowDialog = function(){
