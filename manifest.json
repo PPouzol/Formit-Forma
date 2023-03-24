@@ -6,5 +6,5 @@
     "Platforms": ["Windows"],
     "PanelIcon": "PLUGINLOCATION/assets/sync.png",
     "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ],
-    "DLLs": [ "PLUGINLOCATION/addins/FormItFormaAddIn.dll" ]
+    "DLLs": [ "PLUGINLOCATION/FormItFormaAddIn.dll" ]
 }
