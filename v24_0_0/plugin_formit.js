@@ -1,6 +1,7 @@
 const MAIN_HISTORY_ID = 0;
 
 FormitPlugin = {};
+
 FormitPlugin.PluginLocation = "PLUGINLOCATION";
 FormitPlugin.ShowDialog = function(){
     var dialogParams = {
@@ -41,4 +42,17 @@ FormitPlugin.ReadFile = function(args) {
   var filePath = args[0];
   var content = FormIt.readFile(filePath);
   return content;
+}
+
+FormitPlugin.APILoadGltfFile = function(args) {
+  //@ts-ignore
+  WSM.Gltf.APILoadGltfFile(
+    MAIN_HISTORY_ID,
+    args.tempGlbLocation,
+    args.transf3d,
+    WSM.INVALID_ID,
+    true,
+    [],
+    false
+  )
 }
