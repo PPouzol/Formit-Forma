@@ -1,11 +1,8 @@
-import { Component, createRef } from "react";
-import * as ReactDOMServer from 'react-dom/server';
+import { useState, useEffect } from "react";
 import './App.css'
 import Login from "./components/login.component";
 import FormitForma from "./components/forma.component";
 import formitFormaService from "./services/formit-forma.service";
-
-type Props = {}
 
 declare global {
   let FormItInterface: any;
@@ -20,55 +17,44 @@ declare global {
   // }
 }
 
-class App extends Component<Props> {
-  formitFormaComponent: any;
-
-  constructor(props: Props) {
-    super(props);
-    this.formitFormaComponent = createRef();
+function compileFromCookie() {
+  let loggedIn = window.location.href.indexOf("loggedIn=1") > -1;
+  let cookie = formitFormaService.getCookie('ajs_user_id');
+  let node: JSX.Element | null = null;
+  loggedIn = loggedIn || cookie !== null;
+  if(!loggedIn)
+  {
+    // add nothing, dialog box will be displayed to login
+    node = <div id="LoginControls" className="">
+              <h4>Start plugin to select a project</h4>
+              <button id="LoginButton" className="button is-link" onClick={Login.login}>
+                <span>Start plugin</span>
+                <i className="fab fa-github fa-lg"></i>
+              </button>
+            </div>;
+  }
+  else
+  {
+    node = <FormitForma />;
   }
 
-  componentDidMount() {
-    this.compileFromCookie();
-      
-    let loginButton = document.getElementById("LoginButton");
-    if(loginButton !== null)
-    {
-      loginButton.onclick = Login.login;
-    }      
-  }
+  return { loggedIn, node };
+}
 
-  compileFromCookie(): void {
-    let loggedIn = window.location.href.indexOf("loggedIn=1") > -1;
-    let cookie = formitFormaService.getCookie('ajs_user_id');
-    let node: JSX.Element | null = null;
-    loggedIn = loggedIn || cookie !== null;
-    if(!loggedIn)
-    {
-      // add nothing, dialog box will be displayed to login
-      node = <div id="LoginControls" className="">
-                <h4>Start plugin to select a project</h4>
-                <button id="LoginButton" className="button is-link">
-                  <span>Start plugin</span>
-                  <i className="fab fa-github fa-lg"></i>
-                </button>
-              </div>;
-    }
-    else
-    {
-      node = <FormitForma ref={this.formitFormaComponent}/>;
-    }
+function App() {
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [content, setContent] = useState(<></>)
 
-    if(node !== null)
+  useEffect(() => { 
+    let logContent = compileFromCookie();
+    if(logContent !== null)
     {
-      let nodeStr = ReactDOMServer.renderToString(node!);
-      let appContainer = document.querySelector("#app");
-      appContainer!.innerHTML = nodeStr;
+      setLoggedIn(logContent.loggedIn);
+      setContent(logContent.node!)
     }
-  }
+  }, [])
 
-  render() {
-    let content = 
+  return (
       <div id="PluginWrapper">
         <div id='PluginContainer'>
           <h1 className="title">Formit-Forma</h1>
@@ -76,6 +62,7 @@ class App extends Component<Props> {
           <div id="AppControls">
             <div className="container mt-3">
               <div id="app">
+                { content }
               </div>
             </div>
           </div>
@@ -92,9 +79,8 @@ class App extends Component<Props> {
             </div>
           </div>
         </div>
-      </div>;
-    return content;
-  }
+      </div>
+  )
 }
 
 export default App

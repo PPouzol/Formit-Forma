@@ -1,5 +1,5 @@
 
-import { BaseElement, Child, ElementResponse, BaseProperties  } from "@spacemakerai/element-types"
+import { ElementResponse } from "@spacemakerai/element-types"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
 import { getFormitGeometry, createIntegrateAPIElementAndUpdateProposal, getProposalElement } from "../helpers/saveUtils"
@@ -55,19 +55,7 @@ class FormaSaveService {
   }: {
     projectId: string
     proposalId: string
-  }, callback: any) {
-    const hasSomethingToSave = await FormIt.Model.IsModified();
-  
-    // returning early if there's nothing to save
-    if (!hasSomethingToSave) 
-    {
-      if(callback)
-      {
-        callback(false);
-        return;
-      }
-    }
-  
+  }, callback: any) {  
     // Make sure each top level body and mesh is put into its own instance.
     // The code assumes that levels are only applied to instances at this
     // point. If that is incorrect, we'll need to move the levels from bodies
