@@ -45,8 +45,6 @@ FormitPlugin.ReadFile = function(args) {
 }
 
 FormitPlugin.APIWriteGltfFileReadOnly = function(args) {
-  debugger
-
   var mainHistID = args[0];
   var glbPath = args[1]; 
   var feetToMetersTransf3d = args[2];
