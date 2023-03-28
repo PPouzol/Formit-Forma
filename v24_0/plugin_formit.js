@@ -46,10 +46,10 @@ FormitPlugin.ReadFile = function(args) {
 
 FormitPlugin.APIWriteGltfFileReadOnly = function(args) {
   debugger
-  
-  var mainHistID = args.mainHistID;
-  var glbPath = args.glbPath; 
-  var feetToMetersTransf3d = args.feetToMetersTransf3d;
+
+  var mainHistID = args[0];
+  var glbPath = args[1]; 
+  var feetToMetersTransf3d = args[2];
   var content = WSM.Gltf.APIWriteGltfFileReadOnly(mainHistID, glbPath, false, feetToMetersTransf3d);
   return content;
 }
