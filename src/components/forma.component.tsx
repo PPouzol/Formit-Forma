@@ -7,6 +7,7 @@ import Proposal from "./proposals/proposal"
 import FormitFormaService from "../services/formit-forma.service";
 import { deleteCacheForKey } from "../helpers/cacheUtils"
 import { noop } from "lodash-es";
+import ProposalList from "./proposals/proposal-list.component";
 
 function FormitForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -24,7 +25,7 @@ function FormitForma() {
         setMessageType("info");
         setMessage("");
         let workspaces = results.map((e: any) => {
-          var filledObj = new fetchResultObj()
+          var filledObj = new fetchResultObj();
           filledObj.Fill(e.id, e.name, e.version, e.metadata, e.urn);
           return filledObj;
         });
@@ -138,13 +139,45 @@ function FormitForma() {
   }
 
   async function setSelectedProjectId(newProjectId) {
-    setCurrentProjectId(projectId === newProjectId ? "" : newProjectId);
+    if(project !== null && project?.projectId === newProjectId) {
+      setCurrentProject(null);
+    }
+    else {
+      let matchingProject = projects?.filter((e: any) => {
+        return e.projectId == newProjectId;
+      });
+      if(matchingProject !== null) {
+        setCurrentProject(matchingProject[0]);
+      }
+      else {
+        setCurrentProject(null);
+      }
+    }
   }
 
   async function setSelectedProposalId(newProposalId) {
-    setCurrentProposalId(proposalId === newProposalId ? "" : newProposalId);
+    if(proposal !== null && proposal?.proposalId === newProposalId) {
+      setCurrentProposal(null);
+    }
+    else {
+      if(project !== null) {
+        let matchingProposal = project.proposals.filter((e: any) => {
+          return e.proposalId == newProposalId;
+        });
+        if(matchingProposal !== null) {
+          setCurrentProposal(matchingProposal[0]);
+        }
+        else {
+          setCurrentProposal(null);
+        }
+      }
+      else {
+        setCurrentProposal(null);
+      }
+    }
+
     const hasSomethingToSave = await FormIt.Model.IsModified();
-    const idsProvided = projectId !== "" && newProposalId !== "";
+    const idsProvided = project !== null && project?.projectId !== "" && newProposalId !== "";
     let syncButton = document.getElementById("sync-btn");
     let loadButton = document.getElementById("load-btn");
     if(syncButton !== null)
@@ -154,7 +187,7 @@ function FormitForma() {
     
     if(loadButton !== null)
     {
-      (loadButton as HTMLButtonElement).disabled = !hasSomethingToSave || !idsProvided;
+      (loadButton as HTMLButtonElement).disabled = !idsProvided;
     }   
   }
 
@@ -163,19 +196,24 @@ function FormitForma() {
     container.classList.add('disabled');
     let message = document.getElementById("message");
     message.className = "info";
-    message.textContent = "Sending datas to Forma...";
-    FormitFormaService.fetchAndLoadElements(
-      projectId,
-      proposalId,
-      undefined,
-      [],
-      (success) => {
-        setMessageType(success ? "success" : "error");
-        setMessage(success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
-        container.classList.remove('disabled');
-        this.enableSyncFunction(proposalId)
-      }
-    );
+    message.textContent = "Loading datas from Forma...";
+
+    debugger
+    
+    FormitFormaService.getElementsAndSaveCache(proposal,
+      async() => {
+        FormitFormaService.fetchAndLoadElements(
+          undefined,
+          [],
+          proposal,
+          (success) => {
+            setMessageType(success ? "success" : "error");
+            setMessage(success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
+            container.classList.remove('disabled');
+            this.enableSyncFunction(proposal.proposalId)
+          }
+        );
+      });
   }
 
   function onSyncClick() {
@@ -184,6 +222,8 @@ function FormitForma() {
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Sending datas to Forma...";
+    let projectId = project.projectId;
+    let proposalId = proposal.projectId;
     FormitFormaService.save(
       {
         projectId,
@@ -202,10 +242,10 @@ function FormitForma() {
   // workspaces
   const [workspaces, setWorkspaces] = useState<fetchResultObj[]>()
   // projects
-  const [projectId, setCurrentProjectId] = useState("")
+  const [project, setCurrentProject] = useState<Project>(null)
   const [projects, setProjects] = useState<Project[]>()
   // proposals
-  const [proposalId, setCurrentProposalId] = useState("")
+  const [proposal, setCurrentProposal] = useState<Proposal>(null)
 
   // get workspaces from API
   useEffect(() => {
@@ -247,8 +287,8 @@ function FormitForma() {
           projects={projects}
           projectSelectionHandler={setSelectedProjectId}
           proposalSelectionHandler={setSelectedProposalId}
-          selectedProjectId={projectId}
-          selectedProposalId={proposalId}>
+          selectedProjectId={project?.projectId}
+          selectedProposalId={proposal?.proposalId}>
         </ProjectList>
         <div id="action">
           <button className="st" id="load-btn" onClick={onLoadClick}>Load</button> 

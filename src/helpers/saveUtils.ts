@@ -3,6 +3,7 @@ import { formitGeometryToIntegrateAPIPayload } from "../helpers/loadGeometryFrom
 import { parseUrn } from "../helpers/elementUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import * as uuid from "uuid"
+import FormaService from "../services/forma.service" 
 
 export async function getFormitGeometry(names, callback) {
     this.hideLayersBeforeSave().then(async (previousLayersVisibility) => {
@@ -338,7 +339,7 @@ export async function updateProposalElement({
     authContext: string
     createdUrn?: string
   }) {
-    const proposalElementResponse: ElementResponse | null = await this.getProposalElement(
+    const proposalElementResponse: ElementResponse | null = await FormaService.getProposalElement(
       elementId,
       authContext,
     )
@@ -410,22 +411,5 @@ export async function uploadData(url: string, data: string) {
       return res.ok
     } catch (error) {
       return false
-    }
-  }
-
-export async function getProposalElement(
-    elementId: string,
-    authContext: string,
-  ): Promise<ElementResponse | null> {
-    try {
-      const url = `/api/proposal/elements/${elementId}?authcontext=${authContext}`;
-      const res = await fetch(url);
-
-      if (res.ok) {
-        return (await res.json()) as ElementResponse
-      }
-      return null;
-    } catch (error) {
-      return null;
     }
   }

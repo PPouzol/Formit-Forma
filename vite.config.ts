@@ -9,7 +9,7 @@ export default defineConfig({
   root: '.',
   base: './',
   build: {
-    outDir: './v0_1',
+    outDir: './build',
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
@@ -22,21 +22,41 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
+          src: './build/assets/*',
+          dest: './deploy/v24_0/assets'
+        },
+        {
+          src: './build/index.html',
+          dest: './deploy/v24_0'
+        },
+        {
+          src: './build/login.html',
+          dest: './deploy/v24_0'
+        },
+        {
           src: './manifest.json',
-          dest: '.',
+          dest: './deploy/v24_0',
           rename: 'manifest.json',
         },
         {
           src: './src/assets',
-          dest: '.'
+          dest: './deploy/v24_0'
         },
         {
           src: './plugin_formit.js',
-          dest: '.'
+          dest: './deploy/v24_0'
         },
         {
           src: './README.md',
-          dest: '.'
+          dest: './deploy'
+        },
+        {
+          src: './src/addins/*',
+          dest: './deploy/v24_0'
+        },
+        {
+          src: './versions.json',
+          dest: './deploy'
         }
       ]
     })

@@ -1,9 +1,11 @@
 
-import { ElementResponse } from "@spacemakerai/element-types"
 import * as typesAndConsts from "../helpers/typesAndConstants"
+import { ElementResponse  } from "@spacemakerai/element-types"
 import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
-import { getFormitGeometry, createIntegrateAPIElementAndUpdateProposal, getProposalElement } from "../helpers/saveUtils"
+import { getFormitGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
 import { createCategoryLayers } from "../helpers/layerUtils"
+import Proposal from "../components/proposals/proposal"
+import formaService from "./forma.service"
 
 class FormaSaveService {
   getCookie(cookieName)
@@ -80,23 +82,23 @@ class FormaSaveService {
   }
 
   async getElementsAndSaveCache(
-    authContext: string,
-    proposalId: string,
+    proposal: Proposal,
     callback: any
   ) {
-    await getElementsAndSaveCache(authContext, proposalId, callback);
+    debugger
+
+    await getElementsAndSaveCache(proposal.projectId, proposal.proposalId, callback);
   }
 
   async fetchAndLoadElements(
-    authContext: string,
-    proposalId: string,
     proposalCategorizedPaths: Record<string, string[]>,
     hiddenLayers: string[],
+    proposal: Proposal,
     callback: any
   ) {
-    const proposalElementResponse: ElementResponse = await getProposalElement(
-      proposalId,
-      authContext,
+    const proposalElementResponse: ElementResponse = await formaService.getProposalElement(
+      proposal.proposalId,
+      proposal.projectId,
     )
 
     if (!proposalElementResponse) {
@@ -115,13 +117,14 @@ class FormaSaveService {
     let layersCreated = await createCategoryLayers()
     if(layersCreated)
     {
-
-      let promises = downloadAllChild(proposalElement, authContext, elementResponseMap);
+      let promises = downloadAllChild(proposalElement, proposal.projectId, elementResponseMap);
       await Promise.all(promises)
             .then(async () => {
-                getUrlAndLoad(elementResponseMap, proposalElement, "", proposalId, proposalCategorizedPaths, hiddenLayers)
+              debugger
+
+                getUrlAndLoad(elementResponseMap, proposalElement, "", proposal.proposalId, proposalCategorizedPaths, hiddenLayers)
                 .then(() => {
-                  callback(proposalId);
+                  callback(proposal.proposalId);
                 });
             });
     }

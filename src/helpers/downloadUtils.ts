@@ -2,7 +2,6 @@ import { BaseElement, Child, ElementResponse, BaseProperties } from "@spacemaker
 import { getGlbUrlMapAndAxmList, getPathToUrn } from "../helpers/loadUtils"
 import { getCache, setCache, deleteCacheForKey } from "../helpers/cacheUtils"
 import { parseUrn, elementUrnToUrl } from "../helpers/elementUtils"
-import { getProposalElement } from "./saveUtils"
 import { loadTerrain, requestAndLoadGlb } from "./loadUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import { downloadChildElements } from "../helpers/useLoadElements"
@@ -46,6 +45,8 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
     )
     let foundTerrainId: string
 
+    debugger
+
     for (const [url, glbValue] of Object.entries(glbUrlMap)) {
       if (url.includes("terrain")) {
         //terrain should be 1 element
@@ -81,15 +82,15 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
     }
   }
 
-  export async function getElementsAndSaveCache(authContext, proposalId, callback) {
-    const proposalElementResponse: ElementResponse = await getProposalElement(
-      proposalId,
-      authContext,
+  export async function getElementsAndSaveCache(authContext, proposal, callback) {
+    const proposalElementResponse: ElementResponse = await FormaService.getProposalElement(
+      proposal,
+      authContext
     )
     if (!proposalElementResponse) {
       return
     }
-
+    
     const proposalElement = Object.values(proposalElementResponse).find(
       (element: BaseElement) => {
         return element.properties.category === "proposal"
@@ -100,39 +101,12 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
     const terrainChild: Child = proposalElement?.children?.find((child: Child) => {
       return child.urn.includes("terrain")
     })
-
-    const terrainRevisionId = parseUrn(terrainChild.urn).revision
-    // const cacheExists = await getCache(
-    //   `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`,
-    // )
-
-    // if(!cacheExists) {
-    //   //@ts-ignore
-    //   FormItModule.default().then(async (module) => {
-    //     module._FormItCore_Emscripten_InitHeadless()
-    //     module._RegisterMethods()
-    //     module._FormItCore_InitWrapper()
-        
-    //     //@ts-ignore
-    //     self.FormItModule = module
-
-    //     //let key = `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`;
-    //     // first check that cache does not already exists.
-    //     // if so, no need to go all over download logic again
-    //     //const cacheData = await getCache(key)
-    //     saveToCache(terrainChild, authContext, proposalId, callback)
-    //   });
-    // }
-    // else {
-      //let key = `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`;
-      // first check that cache does not already exists.
-      // if so, no need to go all over download logic again
-      //const cacheData = await getCache(key)
-      saveToCache(terrainChild, authContext, proposalId, callback)
-    //}
+    saveToCache(terrainChild, authContext, proposal.proposalId, callback)
   }
 
 async function saveToCache(terrainChild, authContext, proposalId, callback) {
+  debugger
+  
   const terrainRevisionId = parseUrn(terrainChild.urn).revision
 
   let key = `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`;
@@ -303,7 +277,6 @@ export async function requestAndLoadTerrainTextures(
       //@ts-ignore
       const blob = await offscreen.convertToBlob()
       const dataArray = new Uint8Array(await blob.arrayBuffer())
-      debugger
       const textureId = await WSM.APICreateTexture(typesAndConsts.MAIN_HISTORY_ID, [...dataArray], true, imageFileLocation)
       const materialId = await WSM.APICreateMaterial(
         typesAndConsts.MAIN_HISTORY_ID,
