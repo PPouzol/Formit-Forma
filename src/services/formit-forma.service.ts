@@ -47,46 +47,43 @@ class FormaSaveService {
       const baseUrl = "https://local.spacemaker.ai:3001";
       const returnUrl = `${baseUrl}?loggedIn=1`;
       window.location.replace(`https://app.spacemaker.ai/auth/login?rd=${returnUrl}`);
-      //FormItInterface.CallMethod("FormitPlugin.ShowDialog");
     }
   }
   
   async save({
     projectId,
-    proposalId
+    proposal,
+    elementResponseMap
   }: {
     projectId: string
-    proposalId: string
+    proposal: Proposal
+    elementResponseMap: ElementResponse
   }, callback: any) {  
     // Make sure each top level body and mesh is put into its own instance.
     // The code assumes that levels are only applied to instances at this
     // point. If that is incorrect, we'll need to move the levels from bodies
     // and meshes unto their containing instance.
-    FormItInterface.CallMethod("FormitPlugin.GetAllGeometryInformation", [],
-        async () => {
-          getFormitGeometry(typesAndConsts.formItLayerNames.FORMA_BUILDINGS, (formitGeometry, polygonData) => {
-            if(!polygonData)
-              polygonData = {};
-              
-            let objectId = 0;
-            createIntegrateAPIElementAndUpdateProposal({
-              formitGeometry,
-              proposalId,
-              projectId,
-              polygonData,
-              objectId,
-              callback
-            })
-          });
-        });
+    getFormitGeometry(typesAndConsts.formItLayerNames.FORMA_BUILDINGS, (formitGeometry, polygonData) => {
+      if(!polygonData)
+        polygonData = {};
+        
+      let objectId = 0;
+      createIntegrateAPIElementAndUpdateProposal(
+        formitGeometry,
+        proposal,
+        projectId,
+        polygonData,
+        objectId,
+        elementResponseMap,
+        callback
+      )
+    });
   }
 
   async getElementsAndSaveCache(
     proposal: Proposal,
     callback: any
   ) {
-    debugger
-
     await getElementsAndSaveCache(proposal.projectId, proposal.proposalId, callback);
   }
 
@@ -110,7 +107,7 @@ class FormaSaveService {
     })
 
     const elementResponseMap: ElementResponse = {
-      [proposalElement.urn]: proposalElement,
+      [proposalElement.urn]: proposalElement
     }
 
     // Category Layers needs to be created before loading axm/glb to work properly.
@@ -120,8 +117,6 @@ class FormaSaveService {
       let promises = downloadAllChild(proposalElement, proposal.projectId, elementResponseMap);
       await Promise.all(promises)
             .then(async () => {
-              debugger
-
                 getUrlAndLoad(elementResponseMap, proposalElement, "", proposal.proposalId, proposalCategorizedPaths, hiddenLayers)
                 .then(() => {
                   callback(proposal.proposalId);

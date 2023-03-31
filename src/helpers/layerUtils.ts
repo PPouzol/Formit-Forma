@@ -17,7 +17,7 @@ export function createLayer(histID: number, layerName: string) {
     }
   }
 
-  return { formItLayerId, wsmLayerId };
+  return [ formItLayerId, wsmLayerId ];
 }
 
 async function getWSMLayerID(histID: number, FormaLayerName: string) {
@@ -68,7 +68,11 @@ export async function createCategoryLayers() : Promise<boolean> {
 export async function createOrGetOutOfContextLayer(layerName = typesAndConsts.formItLayerNames.FORMA_CONTEXT) {
   const foundLayerId = await FormIt.Layers.GetLayerID(layerName)
   if (foundLayerId === WSM.INVALID_ID) {
-    const layersIds = await createLayer(typesAndConsts.MAIN_HISTORY_ID, layerName)
+    const results = await Promise.all(createLayer(typesAndConsts.MAIN_HISTORY_ID, layerName))
+    const layersIds = {
+      formItLayerId: results[0],
+      wsmLayerId: results[1]
+    }
     const formItLayerId = layersIds.formItLayerId
     const wsmLayerId = layersIds.wsmLayerId
     const attributeName = "FormIt::OutOfContextLayer"

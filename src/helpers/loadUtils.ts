@@ -177,9 +177,10 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
         t2.data = transpose(src2)
   
         //@ts-ignore
-        FormItInterface.CallMethod("FormitPlugin.Multiply", [t1, t2], (t1) => {
+        WSM.Transf3d.Multiply(t1, t2)
+          .then((t1) => {
             dest = transpose(t1.data) as Transform
-        });
+          });
       } else {
         dest = src2
       }
@@ -187,6 +188,15 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
   
     return dest
   }
+
+ export function getUrnFromPath(path: string, elementResponseMap: ElementResponse) {
+   const rootUrn = Object.values(elementResponseMap).find(
+     (element) => element.properties.category === "proposal",
+   )?.urn
+   const pathMap = getPathToUrn(elementResponseMap, rootUrn)
+ 
+   return pathMap[path]
+ }
 
  export async function loadTerrain(
     proposalId: string,

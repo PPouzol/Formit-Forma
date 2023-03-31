@@ -45,8 +45,6 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
     )
     let foundTerrainId: string
 
-    debugger
-
     for (const [url, glbValue] of Object.entries(glbUrlMap)) {
       if (url.includes("terrain")) {
         //terrain should be 1 element
@@ -105,8 +103,6 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
   }
 
 async function saveToCache(terrainChild, authContext, proposalId, callback) {
-  debugger
-  
   const terrainRevisionId = parseUrn(terrainChild.urn).revision
 
   let key = `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`;
@@ -139,8 +135,6 @@ async function saveToCache(terrainChild, authContext, proposalId, callback) {
     const tempWsmLocation = `/tmp/terrain.wsm`
     
     let transf3d = await WSM.Geom.Transf3d()
-    
-    debugger
 
     const point = await WSM.Geom.Point3d(0, 0, 0)
     const vector = await WSM.Geom.Vector3d(typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET)

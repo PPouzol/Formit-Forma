@@ -12,8 +12,7 @@ export default defineConfig({
     outDir: './build',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        admin: resolve(__dirname, 'login.html')
+        main: resolve(__dirname, 'index.html')
       }
     }
   },
@@ -53,6 +52,10 @@ export default defineConfig({
         {
           src: './src/addins/*',
           dest: './deploy/v24_0'
+        },
+        {
+          src: './src/addins/*',
+          dest: '.'
         },
         {
           src: './versions.json',

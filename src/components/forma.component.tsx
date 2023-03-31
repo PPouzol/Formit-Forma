@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
+import { ElementResponse } from "@spacemakerai/element-types"
 import fetchResultObj from "../common/interfaces";
 import FormaService from "../services/forma.service";
 import ProjectList from "./projects/project-list.component";
 import Project from "./projects/project"
 import Proposal from "./proposals/proposal"
 import FormitFormaService from "../services/formit-forma.service";
-import { deleteCacheForKey } from "../helpers/cacheUtils"
-import { noop } from "lodash-es";
-import ProposalList from "./proposals/proposal-list.component";
+import { retrieveProposalElements } from "../helpers/saveUtils"
 
 function FormitForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -22,8 +21,10 @@ function FormitForma() {
       document.getElementById("message")!.style.display = haveValues ? "block" : "none";
       if(haveValues)
       {
-        setMessageType("info");
-        setMessage("");
+        if(!synced) {
+          setMessageType("info");
+          setMessage("");
+        }
         let workspaces = results.map((e: any) => {
           var filledObj = new fetchResultObj();
           filledObj.Fill(e.id, e.name, e.version, e.metadata, e.urn);
@@ -60,8 +61,10 @@ function FormitForma() {
         });
 
       await fillProposals(projectsResults);
-      setMessageType("info");
-      setMessage("");
+      if(!synced) {
+        setMessageType("info");
+        setMessage("");
+      }
     } catch (error) {
       const errorTxt = "Unable to read projects from selected workspace";
       setMessageType("error");
@@ -72,32 +75,52 @@ function FormitForma() {
 
   async function fillProposals(projectsResults) {
     try {
-      setMessageType("info");
-      setMessage("Fetching proposals...");
-
       for(const project of projectsResults) {
         await FormaService.getProposals(project.projectId)
           .then( (proposals) => {
             project.proposals = proposals.map((e: any) => {
-              var proposal = new Proposal()
+              var proposalEntry = new Proposal()
               const split = e.urn.split(":");
               let id = split[split.length - 2];
               let revision = split[split.length - 1];
               let name = e.properties.name;
-              proposal.Fill(id, name, revision, e.metadata, e.urn);
+              proposalEntry.Fill(id, name, revision, e.metadata, e.urn);
               let creationDate = new Date(e.metadata.createdAt);              
               let hour = creationDate.getHours();
               let minutes = creationDate.getMinutes();
               if(creationDate.getDate() === new Date().getDate())
               {
-                proposal.creationDate = `Today ${hour}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
+                proposalEntry.creationDate = `Today ${hour}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
               }
               else
               {
-                proposal.creationDate = `${creationDate.toLocaleString()}`;
+                proposalEntry.creationDate = `${creationDate.toLocaleString()}`;
               }
-              proposal.projectId = project.projectId;
-              return proposal;
+              proposalEntry.projectId = project.projectId;
+              
+              if(proposal)
+              {
+                if(proposal.id === proposalEntry.id)
+                {
+                  // currently selected proposal match this entry. 
+                  // should be updated to get last urn with revision
+                  setCurrentProposal(proposalEntry);
+                            
+                  if(synced)
+                  {
+                    retrieveProposalElements(project.projectId, proposal.proposalId)
+                      .then((proposalElement) => {
+                        const elementResponseMap: ElementResponse = {
+                          [proposalElement.urn]: proposalElement
+                        }
+
+                        setElements(elementResponseMap)
+                      })
+                  }
+                }
+              }
+                            
+              return proposalEntry;
             });
             project.proposals.sort(function(proposalA,proposalB){
               return new Date(proposalA.metadata.createdAt).getTime() - new Date(proposalB.metadata.createdAt).getTime();
@@ -112,8 +135,14 @@ function FormitForma() {
           });
         }
         setProjects(projectsResults);
-        setMessageType("info");
-        setMessage("");
+
+        if(!synced) {
+          setMessageType("info");
+          setMessage("");
+        }
+        else {
+          setSync(false);
+        }
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
       setMessageType("error");
@@ -123,9 +152,6 @@ function FormitForma() {
   }
 
   function fillWorkspaceProjects(workspaceId) {
-    setMessageType("info");
-    setMessage("Fetching projects...");
-
     handleFetchValues(FormaService.getProjects(workspaceId), 
       handleProjectsFetchedValues.bind(this));
   }
@@ -166,6 +192,15 @@ function FormitForma() {
         });
         if(matchingProposal !== null) {
           setCurrentProposal(matchingProposal[0]);
+
+          retrieveProposalElements(project.projectId, matchingProposal[0].proposalId)
+            .then((proposalElement) => {
+              const elementResponseMap: ElementResponse = {
+                 [proposalElement.urn]: proposalElement
+              }
+
+              setElements(elementResponseMap)
+            })
         }
         else {
           setCurrentProposal(null);
@@ -198,8 +233,6 @@ function FormitForma() {
     message.className = "info";
     message.textContent = "Loading datas from Forma...";
 
-    debugger
-    
     FormitFormaService.getElementsAndSaveCache(proposal,
       async() => {
         FormitFormaService.fetchAndLoadElements(
@@ -223,13 +256,14 @@ function FormitForma() {
     message.className = "info";
     message.textContent = "Sending datas to Forma...";
     let projectId = project.projectId;
-    let proposalId = proposal.projectId;
     FormitFormaService.save(
       {
         projectId,
-        proposalId
+        proposal,
+        elementResponseMap
       }, 
       (success) => {
+        setSync(true);
         setMessageType(success ? "success" : "error");
         setMessage(success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
         container.classList.remove('disabled');
@@ -246,13 +280,11 @@ function FormitForma() {
   const [projects, setProjects] = useState<Project[]>()
   // proposals
   const [proposal, setCurrentProposal] = useState<Proposal>(null)
-
-  // get workspaces from API
+  // elements
+  const [elementResponseMap, setElements] = useState<ElementResponse>({})
+  const [synced, setSync] = useState(false)
+  
   useEffect(() => {
-    setMessage("Fetching worskpaces...");
-    handleFetchValues(FormaService.getWorkspaces(), 
-          handleWorkspacesFetchedValues.bind(this));
-
     // on start, disable the button. 
     // this must be done here, as adding disabled to the default return will prevent binding onSyncClick
     let syncButton = document.getElementById("sync-btn");
@@ -264,8 +296,14 @@ function FormitForma() {
     if(loadButton !== null)
     {
       (loadButton as HTMLButtonElement).disabled = true;
-    }    
+    }  
   }, [])
+
+  // get workspaces from API
+  useEffect(() => {
+    handleFetchValues(FormaService.getWorkspaces(), 
+          handleWorkspacesFetchedValues.bind(this));
+  }, [synced])
 
 	return (
     <div id="FormaControls" className="col-md-12">
