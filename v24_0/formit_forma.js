@@ -30,6 +30,8 @@ FormIt.FormaAddIn.CreateTempPath = function(aPath) {
         TestAPI: "FormIt.FormaAddIn.CreateTempPath",
         aPath: aPath
     };
+    debugger
+    
     return callAsyncAPI(args);
 };
 
