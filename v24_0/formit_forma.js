@@ -25,6 +25,14 @@ FormIt.FormaAddIn.ImportAXMBlob = function(blob) {
     return callAsyncAPI(args);
 };
 
+FormIt.FormaAddIn.CreateTempPath = function(aPath) {
+    args = {
+        TestAPI: "FormIt.FormaAddIn.CreateTempPath",
+        aPath: aPath
+    };
+    return callAsyncAPI(args);
+};
+
 FormIt.FormaAddIn.MakeBlobFile = function(aPath, blob) {
     args = {
         TestAPI: "FormIt.FormaAddIn.MakeBlobFile",
