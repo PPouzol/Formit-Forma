@@ -17,6 +17,17 @@ FormIt.FormaAddIn.ReadAXMandMakeBlob = function(aPath) {
     return callAsyncAPI(args);
 };
 
+FormIt.FormaAddIn.SaveDataToTemp = function(baData, aFilename, aExtension) {
+    args = {
+        TestAPI: "FormIt.FormaAddIn.SaveDataToTemp",
+        baData:baData,
+        aFilename:aFilename,
+        aExtension:aExtension
+    };
+    return callAsyncAPI(args);
+};
+
+
 FormIt.FormaAddIn.ImportAXMBlob = function(blob) {
     args = {
         TestAPI: "FormIt.FormaAddIn.ReadAXMandMakeBlob",
