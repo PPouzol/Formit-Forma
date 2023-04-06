@@ -118,7 +118,7 @@ class FormaSaveService {
       let promises = downloadAllChild(proposalElement, proposal.projectId, elementResponseMap);
       await Promise.all(promises)
             .then(async () => {
-                getUrlAndLoad(elementResponseMap, proposalElement, "", proposalCategorizedPaths, hiddenLayers)
+                getUrlAndLoad(elementResponseMap, proposalElement, proposal.proposalId, "", proposalCategorizedPaths, hiddenLayers)
                 .then(() => {
                   callback(proposal.proposalId);
                 });

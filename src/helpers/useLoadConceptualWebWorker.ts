@@ -5,7 +5,6 @@ async function useLoadConceptualWebWorker(authContext: string, proposalId: strin
     const init = async (url) => {
       try {
         const initTerrainWorker = await import(
-          /* @vite-ignore */
           url
         )
         await initTerrainWorker.default(proposalId, authContext)

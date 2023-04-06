@@ -35,7 +35,7 @@ export function downloadAllChild(proposalElement, authContext, elementResponseMa
     return promises
   }
 
-export async function getUrlAndLoad(elementResponseMap, proposalElement, editingElementPath, 
+export async function getUrlAndLoad(elementResponseMap, proposalElement, proposalId, editingElementPath, 
   proposalCategorizedPaths, hiddenLayers) {
     const pathMap = getPathToUrn(elementResponseMap, proposalElement.urn)
     const { glbUrlMap, axmList } = getGlbUrlMapAndAxmList(
@@ -65,7 +65,8 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
           }
         } else {
           foundTerrainId = terrainDetails.id
-          await loadTerrain(proposalElement.proposalId, terrainDetails)
+
+          loadTerrain(proposalId, terrainDetails)
         }
       }
       else {
