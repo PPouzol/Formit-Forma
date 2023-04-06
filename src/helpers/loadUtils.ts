@@ -12,6 +12,8 @@ import {
   Transform
 } from "@spacemakerai/element-types"
 
+export type InternalPath = string
+
 export const transpose = (src: Transform) => {
     const dest = [...src]
   
@@ -202,35 +204,37 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
     proposalId: string,
     terrainDetails: typesAndConsts.ElementDetails,
   ): Promise<typesAndConsts.CreatedObjectDetails> {
-    const tempTerrainWSMPath = "/tmp/terrain.window.WSM"
+    const tempTerrainWSMPath = "terrain.window.WSM"
     const terrainRevisionId = parseUrn(terrainDetails.urn).revision
     const terrainCacheData = await getTerrainCache(
       `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`,
     )
 
     try {
+      let parsedDatas = Array.from(terrainCacheData as Uint8Array);
       await createFile(
       {
         savePath: tempTerrainWSMPath
       },
-      terrainCacheData,
+      parsedDatas,
       true,
-      async () => {
+      async (args) => {
+        let storedPath = args.tempGlbLocation;
         const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
 
         //The actual load of cached terrain window.WSM
-        await FormIt.ImportFile(tempTerrainWSMPath, false, WSM.INVALID_ID, false)
+        await FormIt.ImportFile(storedPath, false, WSM.INVALID_ID, false)
   
         const newDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
         const data = await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
           typesAndConsts.MAIN_HISTORY_ID,
           previousDelta,
           newDelta,
-          [WSM.nGroupType],
+          [WSM.nObjectType.nGroupType]
         )
   
         const createdGroupIds = data.created
-        await deleteFile(tempTerrainWSMPath);
+        await deleteFile(storedPath);
   
         //should only be 1 terrain group.
         if (createdGroupIds.length === 1) {
@@ -242,7 +246,6 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
         }
         throw new Error("Error reading terrain transform from cached window.WSM, did not get 1 created group")
       });
-
     } catch (e) {
       console.log(`Error loading terrain from cache - ${e}`)
       return {
@@ -282,22 +285,33 @@ export async function requestAndLoadGlb(
     elementsInGlb: Array<typesAndConsts.ElementDetailsWithLoadInfo>,
     fileId: string,
     proposalCategorizedPaths: Record<string, string[]>,
-    hiddenLayers: string[],
+    hiddenLayers: string[]
   ) {
-    const fileLocation = `/tmp/${fileId}.glb`
+    const fileLocation = `${fileId}.glb`
     const isTerrain: boolean = glbUrl.includes("terrain")
   
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
-        createFile(
+        await createFile(
           {
             fetchUrl: glbUrl,
             savePath: fileLocation
           },
           null,
           true, 
-          async () => 
+          async (args) => 
           {
+            let topLevels = [];
+            const categorizedPaths: Record<string, Record<string, InternalPath[]>> = { proposal: {}, scenario: {} };
+
+            for (const el of topLevels) {
+              const layerType = el.scenario ? "scenario" : "proposal"
+              categorizedPaths[layerType][el.category] = categorizedPaths[layerType][el.category] ?? []
+              categorizedPaths[layerType][el.category].push(el.path)
+            }
+            let proposalCategorizedPaths = categorizedPaths["proposal"];
+            
+            let finalLocation: string = args.tempGlbLocation;
             //if any of the elementsInGlb are being edited, filter them and then
             //load them separately so we can get their objectId when created as
             //we need to treat them differntly
@@ -316,24 +330,40 @@ export async function requestAndLoadGlb(
     
             if (elementsToLoadAsContext.length > 0) {
               //loadGltf only creates 1 instance as it groups everything it creates
-              const createdInstanceId = loadGltf({
-                fileLocation,
+              const createdInstanceId = await loadGltf({
+                fileLocation: finalLocation,
                 elementDetails: elementsToLoadAsContext,
                 isTerrain,
                 transform: undefined, //May not be needed as we multiply the transform for each node now?
               })
+
+              if(!createdInstanceId)
+              {
+                deleteFile(finalLocation);
+        
+                resolve({
+                  allIdsCreated: allInstanceIds,
+                  idEditingForConversion,
+                  isTerrain,
+                })
+
+                const errorMessage = `Failed to request and load file into memory for url - ${glbUrl}`;
+                console.warn(errorMessage);
+                reject(errorMessage);
+                return;
+              }
     
               //just use the first element node of the glb. We have a 1:1 relationship of an glb to a layer. Meaning we don't split up a glb onto multiple layers.
               const category = getCategoryFromElementPath(
                 elementsToLoadAsContext[0].fullIdPath,
-                proposalCategorizedPaths,
+                proposalCategorizedPaths
               )
     
               if (category) {
                 const categoryLayer = await createOrGetOutOfContextLayer(category)
-                FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, [
+                await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, [
                   typesAndConsts.MAIN_HISTORY_ID,
-                  createdInstanceId,
+                  createdInstanceId
                 ])
               }
     
@@ -344,7 +374,7 @@ export async function requestAndLoadGlb(
             }
     
             if (elementsToLoadForConversion.length > 0) {
-              const createdInstanceId = loadGltf({
+              const createdInstanceId = await loadGltf({
                 fileLocation,
                 elementDetails: elementsToLoadForConversion,
                 isTerrain,
@@ -363,7 +393,7 @@ export async function requestAndLoadGlb(
               allInstanceIds = [...allInstanceIds, createdInstanceId]
             }
     
-            deleteFile(fileLocation);
+            deleteFile(finalLocation);
     
             resolve({
               allIdsCreated: allInstanceIds,
@@ -377,7 +407,7 @@ export async function requestAndLoadGlb(
     })
   }
 
-function loadGltf({
+async function loadGltf({
   fileLocation,
   elementDetails,
   isTerrain,
@@ -400,22 +430,22 @@ function loadGltf({
     return transformInfo.id
   })
 
-  let transf3d = WSM.Geom.Transf3d()
+  let transf3d = await WSM.Geom.Transf3d()
 
   if (transform) {
     transf3d.data = transpose(transform)
   }
 
-  const point = WSM.Geom.Point3d(0, 0, 0)
-  const vector = WSM.Vector3d.Vector3d(typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET)
-  const metersToFeetTransf3d = WSM.Transf3d.MakeScalingTransform(point, vector)
+  const point = await WSM.Geom.Point3d(0, 0, 0)
+  const vector = await WSM.Vector3d.Vector3d(typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET)
+  const metersToFeetTransf3d = await WSM.Transf3d.MakeScalingTransform(point, vector)
 
   //@ts-ignore
-  transf3d = WSM.Transf3d.Multiply(metersToFeetTransf3d, transf3d)
+  transf3d = await WSM.Transf3d.Multiply(metersToFeetTransf3d, transf3d)
 
-  const previousDelta = WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+  const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
 
-  WSM.Gltf.APILoadGltfFile(
+  await WSM.Gltf.APILoadGltfFile(
     typesAndConsts.MAIN_HISTORY_ID,
     fileLocation,
     transf3d,
@@ -427,19 +457,19 @@ function loadGltf({
     !isTerrain,
   )
 
-  const newDelta = WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
-  const data = WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
+  const newDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+  const data = await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
     typesAndConsts.MAIN_HISTORY_ID,
     previousDelta,
     newDelta,
-    [WSM.nMeshType, WSM.nInstanceType],
+    [WSM.nObjectType.nMeshType, WSM.nObjectType.nInstanceType],
   )
 
   const createIds = data.created
 
-  const createdGroupID = WSM.Utils.CreateAlignedAndCenteredGroup(typesAndConsts.MAIN_HISTORY_ID, createIds)
+  const createdGroupID = await WSM.Utils.CreateAlignedAndCenteredGroup(typesAndConsts.MAIN_HISTORY_ID, createIds)
 
-  const instanceIDs = WSM.APIGetObjectsByTypeReadOnly(
+  const instanceIDs = await WSM.APIGetObjectsByTypeReadOnly(
     typesAndConsts.MAIN_HISTORY_ID,
     createdGroupID,
     WSM.nObjectType.nInstanceType,

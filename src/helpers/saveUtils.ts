@@ -234,7 +234,7 @@ async function clearLevelsAndSave(selectedObjectIds)
 
 async function getDatasForBlob() {
   let axmPath = await FormIt.FormaAddIn.SaveCurrentAXMtoTempFile(true);
-  let savedAxmDatas = await FormIt.FormaAddIn.ReadAXMandMakeBlob(axmPath);
+  let savedAxmDatas = await FormIt.FormaAddIn.ReadFileandMakeBlob(axmPath);
 
   var uint8Array = new Uint8Array(savedAxmDatas.length);
   for(var i = 0; i < uint8Array.length; i++) {
@@ -391,8 +391,6 @@ export async function createIntegrateAPIElementAndUpdateProposal(
             let editingElementId = "";
             let editingElementUrn = "";
             let atLeastOneDeleted = false;
-
-            debugger
 
             let idsInPayload = Object.entries(integrateAPIPayload.elements).map(([key, any]) => {
               return key;

@@ -61,7 +61,7 @@ export async function createCategoryLayers() : Promise<boolean> {
   layersPromises.push(createOrGetOutOfContextLayer(typesAndConsts.formItLayerNames.FORMA_CONTEXT))
 
   let results = await Promise.all(layersPromises)
-  let creationSucceed = results.filter((ids) => ids.formItLayerId === WSM.INVALID_ID || !ids.wsmLayerId || ids.wsmLayerId === -1).length === 0
+  let creationSucceed = results.filter((ids) => ids.formItLayerId === WSM.INVALID_ID || ids.wsmLayerId === -1).length === 0
   return creationSucceed
 }
 

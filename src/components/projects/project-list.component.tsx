@@ -1,6 +1,4 @@
 import * as ProjectS from "./project-style"
-import FormaService from "../../services/forma.service"
-import fetchResultObj from "../../common/interfaces";
 import ProjectComponent from "./project.component"
 import Project from "./project"
 

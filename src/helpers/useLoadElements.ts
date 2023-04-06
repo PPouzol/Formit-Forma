@@ -10,6 +10,7 @@ export async function downloadChildElements(
   child: Child,
   authContext: string,
   elementResponseMap: ElementResponse) {
+
   //a temporary band-aid until all element systems upgrade to new children spec/scheme
   if (typeof child === "string") {
     child = {

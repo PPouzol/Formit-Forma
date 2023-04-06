@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import * as ProposalS from "./proposal-style"
 import FormaService from "../../services/forma.service"
 import Proposal from "./proposal"

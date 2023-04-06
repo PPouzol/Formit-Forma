@@ -7,6 +7,8 @@ import Project from "./projects/project"
 import Proposal from "./proposals/proposal"
 import FormitFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
+import { getTerrainCache } from "../helpers/loadUtils"
+import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
 
 function FormitForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -167,6 +169,7 @@ function FormitForma() {
   async function setSelectedProjectId(newProjectId) {
     if(project !== null && project?.projectId === newProjectId) {
       setCurrentProject(null);
+      setCurrentProposal(null);
     }
     else {
       let matchingProject = projects?.filter((e: any) => {
@@ -179,18 +182,20 @@ function FormitForma() {
         setCurrentProject(null);
       }
     }
+    updateButtonsState("");
   }
 
   async function setSelectedProposalId(newProposalId) {
     if(proposal !== null && proposal?.proposalId === newProposalId) {
       setCurrentProposal(null);
+      newProposalId = "";
     }
     else {
       if(project !== null) {
         let matchingProposal = project.proposals.filter((e: any) => {
           return e.proposalId == newProposalId;
         });
-        if(matchingProposal !== null) {
+        if(matchingProposal !== null && matchingProposal.length > 0) {
           setCurrentProposal(matchingProposal[0]);
 
           retrieveProposalElements(project.projectId, matchingProposal[0].proposalId)
@@ -210,9 +215,12 @@ function FormitForma() {
         setCurrentProposal(null);
       }
     }
+    updateButtonsState(newProposalId);
+  }
 
+  async function updateButtonsState(proposalId) {
     const hasSomethingToSave = await FormIt.Model.IsModified();
-    const idsProvided = project !== null && project?.projectId !== "" && newProposalId !== "";
+    const idsProvided = project !== null && project?.projectId !== "" && proposalId !== "";
     let syncButton = document.getElementById("sync-btn");
     let loadButton = document.getElementById("load-btn");
     if(syncButton !== null)
@@ -226,27 +234,44 @@ function FormitForma() {
     }   
   }
 
-  function onLoadClick() {
+  async function onLoadClick() {
     let container = document.getElementById("projectlist-container");
     container.classList.add('disabled');
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Loading datas from Forma...";
+    
+    // to be reactived if we want to offer possibility to save current edits locally
+    // let hasSomethingToSave = await FormIt.Model.IsModified();
+    // if(hasSomethingToSave)
+    // {
+    //   // start new sketch, to prevent opening several project at once
+    //   FormIt.NewFile();
+    //   hasSomethingToSave = await FormIt.Model.IsModified();
+    //   if(hasSomethingToSave)
+    //   {
+    //     // user has cancelled or new file has failed, cancel loading and display an error
+    //     setMessageType("info");
+    //     setMessage("Loading cancelled");
+    //     container.classList.remove('disabled');
+    //     return;
+    //   }
+    // }
+    
+    FormIt.NewFile(true);
 
-    FormitFormaService.getElementsAndSaveCache(proposal,
-      async() => {
-        FormitFormaService.fetchAndLoadElements(
-          undefined,
-          [],
-          proposal,
-          (success) => {
-            setMessageType(success ? "success" : "error");
-            setMessage(success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
-            container.classList.remove('disabled');
-            this.enableSyncFunction(proposal.proposalId)
-          }
-        );
-      });
+    useLoadConceptualWebWorker(proposal.projectId, proposal.proposalId);
+
+    FormitFormaService.fetchAndLoadElements(
+      undefined,
+      [],
+      proposal,
+      (success) => {
+        setMessageType(success ? "success" : "error");
+        setMessage(success ? "Datas have been loaded from Forma" : "Loading failed");
+        container.classList.remove('disabled');
+      }
+    );
   }
 
   function onSyncClick() {

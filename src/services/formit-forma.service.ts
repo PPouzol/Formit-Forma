@@ -3,6 +3,7 @@ import * as typesAndConsts from "../helpers/typesAndConstants"
 import { ElementResponse  } from "@spacemakerai/element-types"
 import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
 import { getFormitGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
+import { InternalPath } from "../helpers/loadUtils"
 import { createCategoryLayers } from "../helpers/layerUtils"
 import Proposal from "../components/proposals/proposal"
 import formaService from "./forma.service"
@@ -117,7 +118,7 @@ class FormaSaveService {
       let promises = downloadAllChild(proposalElement, proposal.projectId, elementResponseMap);
       await Promise.all(promises)
             .then(async () => {
-                getUrlAndLoad(elementResponseMap, proposalElement, "", proposal.proposalId, proposalCategorizedPaths, hiddenLayers)
+                getUrlAndLoad(elementResponseMap, proposalElement, "", proposalCategorizedPaths, hiddenLayers)
                 .then(() => {
                   callback(proposal.proposalId);
                 });

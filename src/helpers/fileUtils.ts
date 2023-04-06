@@ -1,38 +1,62 @@
 import formaService from "../services/forma.service"
 
 export async function deleteFile(fileLocation) {
-    // if (window.FormItModule.ccall("FormItCore_FileExists", "bool", ["string"], [fileLocation])) {
-    //   window.FormItModule.ccall("FormItCore_DeleteFile", "int", ["string"], [fileLocation])
-    // }
+    FormIt.FormaAddIn.DeleteTempFile(fileLocation);
   }
 
 export async function createFile(args, datas, clearExisting, callback) {
-    if(clearExisting)
-    {
-        deleteFile(args.savePath);
-    }
     if(!datas)
     {
-        await formaService.fetchRawDatas(args.FetchUrl)
-            .then(async (res) => res.blob())
+        await formaService.fetchRawDatas(args.fetchUrl)
+            .then(async (result) => {
+                let buffer = await result.arrayBuffer();
+                let parsedDatas = Array.from(new Uint8Array(buffer));
+                return parsedDatas;
+            })
             .then(async (datas) => {
-                //save datas to file in args.savePath
-                // TBD
-                //then, call the callback if any
-                if(callback)
+                let finalPath = await FormIt.FormaAddIn.CreateTempPath(args.savePath);
+                if(finalPath === "{}")
                 {
-                    callback(args);
+                    // an existing remaining file exists
+
                 }
-            });
+                if(clearExisting)
+                {
+                    deleteFile(finalPath);
+                }
+                //save datas to file in args.savePath
+                await FormIt.FormaAddIn.MakeBlobFile(finalPath, datas)
+                   .then(() => {
+                        //then, call the callback if any
+                        if(callback)
+                        {
+                            args.tempGlbLocation = finalPath;
+                            callback(args);
+                        }
+                    })
+            })
     }
     else
     {
         //save datas to file in args.savePath
-        // TBD
-        //then, call the callback if any
-        if(callback)
+        let finalPath = await FormIt.FormaAddIn.CreateTempPath(args.savePath);
+        if(finalPath === "{}")
         {
-            callback(args);
+            return true;
         }
+        if(clearExisting)
+        {
+            deleteFile(finalPath);
+        }
+        //save datas to file in args.savePath
+        await FormIt.FormaAddIn.MakeBlobFile(finalPath, datas)
+            .then(() => {
+                //then, call the callback if any
+                if(callback)
+                {
+                    args.tempGlbLocation = finalPath;
+                    callback(args);
+                }
+            })
     }
 }

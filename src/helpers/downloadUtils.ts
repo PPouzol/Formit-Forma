@@ -36,7 +36,7 @@ export function downloadAllChild(proposalElement, authContext, elementResponseMa
   }
 
 export async function getUrlAndLoad(elementResponseMap, proposalElement, editingElementPath, 
-  proposalId, proposalCategorizedPaths, hiddenLayers) {
+  proposalCategorizedPaths, hiddenLayers) {
     const pathMap = getPathToUrn(elementResponseMap, proposalElement.urn)
     const { glbUrlMap, axmList } = getGlbUrlMapAndAxmList(
       elementResponseMap,
@@ -65,7 +65,7 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, editing
           }
         } else {
           foundTerrainId = terrainDetails.id
-          await loadTerrain(proposalId, terrainDetails)
+          await loadTerrain(proposalElement.proposalId, terrainDetails)
         }
       }
       else {
@@ -131,8 +131,8 @@ async function saveToCache(terrainChild, authContext, proposalId, callback) {
       throw new Error("Did not find exactly one terrain urn")
     }
     
-    const tempGlbLocation = `/tmp/terrain.glb`
-    const tempWsmLocation = `/tmp/terrain.wsm`
+    const tempGlbLocation = `terrain.glb`
+    const tempWsmLocation = `terrain.wsm`
     
     let transf3d = await WSM.Geom.Transf3d()
 
@@ -140,47 +140,25 @@ async function saveToCache(terrainChild, authContext, proposalId, callback) {
     const vector = await WSM.Geom.Vector3d(typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET, typesAndConsts.METERS_TO_FEET)
     const metersToFeetTransf3d = await WSM.Geom.MakeScalingTransform(point, vector)
 
-    let multiplyResult
     //@ts-ignore
-    await FormItInterface.CallMethod("FormitPlugin.Multiply", [metersToFeetTransf3d, transf3d], async (result) => {
-      multiplyResult = result
-      console.info(`multiply result: ${multiplyResult}`)
-      let resultJson = JSON.parse(multiplyResult)
-      transf3d = resultJson
-      
-      //@ts-ignore
-      // self.FormItModule.FS_createPreloadedFile(
-      //   "",
-      //   tempGlbLocation,
-      //   geometryFileUrl,
-      //   true,
-      //   true,
-      //   async () => {
-      //     WSM.Gltf.APILoadGltfFile(
-      //       typesAndConsts.MAIN_HISTORY_ID,
-      //       tempGlbLocation,
-      //       transf3d,
-      //       WSM.INVALID_ID,
-      //       true,
-      //       [],
-      //       false,
-      //     )
-
-      await createFile({
-        fetchUrl: geometryFileUrl,
-        savePath: tempGlbLocation,
-        transf3d,
-        materialId,
-        tempWsmLocation, 
-        key,
-        proposalId,
-        terrainRevisionId,
-        callback
-      }, 
-      null, 
-      true,
-      loadVolumeData);
-    });
+    await WSM.Transf3d.Multiply(metersToFeetTransf3d, transf3d)
+      .then(async (multiplyResult) => {
+        transf3d = multiplyResult
+        await createFile({
+          fetchUrl: geometryFileUrl,
+          savePath: tempGlbLocation,
+          transf3d,
+          materialId,
+          tempWsmLocation, 
+          key,
+          proposalId,
+          terrainRevisionId,
+          callback
+        }, 
+        null, 
+        true,
+        loadVolumeData);
+      });
   }
   else
   {
@@ -192,8 +170,16 @@ async function saveToCache(terrainChild, authContext, proposalId, callback) {
 }
 
 async function loadVolumeData(args, callback) {
-  await FormItInterface.CallMethod("FormitPlugin.APILoadGltfFile", args,
-    async () => {
+  await WSM.Glft.APILoadGltfFile(
+    typesAndConsts.MAIN_HISTORY_ID,
+    args.tempGlbLocation,
+    args.transf3d,
+    WSM.INVALID_ID,
+    true,
+    [],
+    false,
+  )
+    .then(async () => {
       const ids = await WSM.APIGetAllObjectsByTypeReadOnly(0, WSM.nObjectType.nMeshType)
 
       await WSM.APISetObjectsMaterial(typesAndConsts.MAIN_HISTORY_ID, ids, args.materialId)
@@ -256,12 +242,13 @@ export async function requestAndLoadTerrainTextures(
     const [mapTextureInfo] = await Promise.all([await FormaService.getAsJson(mapTextureUrl)])
 
     const textureUrl = mapTextureInfo.link
-    const imageFileLocation = `/terrainTexture.jpeg`
+    const imageFileLocation = `terrainTexture.jpeg`
 
     const res = await fetch(textureUrl)
 
     if (res.ok) {
       const terrainImageBlob: Blob = await res.blob()
+      let finalPath = await FormIt.FormaAddIn.CreateTempPath(imageFileLocation);
       const terrainImage = await createImageBitmap(terrainImageBlob, { imageOrientation: "flipY" })
       const offscreen = new self.OffscreenCanvas(terrainImage.width, terrainImage.height)
       const ctx = offscreen.getContext("bitmaprenderer")
@@ -271,7 +258,7 @@ export async function requestAndLoadTerrainTextures(
       //@ts-ignore
       const blob = await offscreen.convertToBlob()
       const dataArray = new Uint8Array(await blob.arrayBuffer())
-      const textureId = await WSM.APICreateTexture(typesAndConsts.MAIN_HISTORY_ID, [...dataArray], true, imageFileLocation)
+      const textureId = await WSM.APICreateTexture(typesAndConsts.MAIN_HISTORY_ID, [...dataArray], true, finalPath)
       const materialId = await WSM.APICreateMaterial(
         typesAndConsts.MAIN_HISTORY_ID,
         WSM.Color(225, 225, 225, 255),

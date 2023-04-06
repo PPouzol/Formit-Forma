@@ -65,7 +65,11 @@ class FormaService {
   }
 
   FormatThumbnailUrl(projectId: string, urn: string) {
-    return `${SPACEMAKER_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
+    return `${API_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
+  }
+  
+  FormatConceptualWorkerUrl() {
+    return `${API_URL}/web-components/conceptual-design/conceptual-design-terrain-worker-initiator.mjs`
   }
 
   fetchRawDatas(url: string) {
@@ -74,13 +78,12 @@ class FormaService {
       url = `${API_URL}${url}`
     }
     return fetch(url, {
-      
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Set-Cookie": "true",
       },
-    })
+    });
   }
 
   getAsJson(url: string) {
@@ -97,7 +100,8 @@ class FormaService {
     })
     .then(res => {
       if (res.ok) {
-        return res.json()
+        var result = res.json()
+        return result;
       }
       return false
     });
