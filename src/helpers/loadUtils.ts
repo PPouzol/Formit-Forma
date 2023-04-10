@@ -11,6 +11,10 @@ import {
   ElementResponse,
   Transform
 } from "@spacemakerai/element-types"
+import { isEmpty } from "lodash-es"
+import { v4 as uuid } from "uuid"
+import { createLayer } from "./layerUtils"
+
 
 export type InternalPath = string
 
@@ -204,54 +208,57 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
     proposalId: string,
     terrainDetails: typesAndConsts.ElementDetails,
   ): Promise<typesAndConsts.CreatedObjectDetails> {
-    const tempTerrainWSMPath = "terrain.window.WSM"
-    const terrainRevisionId = parseUrn(terrainDetails.urn).revision
-    const terrainCacheData = await getTerrainCache(
-      `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`,
-    )
-
-    try {
-      let parsedDatas = Array.from(terrainCacheData as Uint8Array);
-      await createFile(
-      {
-        savePath: tempTerrainWSMPath
-      },
-      parsedDatas,
-      true,
-      async (args) => {
-        let storedPath = args.tempGlbLocation;
-        const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
-
-        //The actual load of cached terrain window.WSM
-        await FormIt.ImportFile(storedPath, false, WSM.INVALID_ID, false)
-  
-        const newDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
-        const data = await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
-          typesAndConsts.MAIN_HISTORY_ID,
-          previousDelta,
-          newDelta,
-          [WSM.nObjectType.nGroupType]
+    return new Promise(async (resolve, reject) => {
+      try {
+        const tempTerrainWSMPath = "terrain.window.WSM"
+        const terrainRevisionId = parseUrn(terrainDetails.urn).revision
+        const terrainCacheData = await getTerrainCache(
+          `3d-sketch-terrain-${proposalId}-revision-${terrainRevisionId}`,
         )
-  
-        const createdGroupIds = data.created
-        await deleteFile(storedPath);
-  
-        //should only be 1 terrain group.
-        if (createdGroupIds.length === 1) {
-          return {
-            idArray: createdGroupIds,
-            isTerrain: true,
-            isAxm: false,
+    
+        let parsedDatas = Array.from(terrainCacheData as Uint8Array);
+        await createFile(
+        {
+          savePath: tempTerrainWSMPath
+        },
+        parsedDatas,
+        true,
+        async (args) => {
+          let storedPath = args.tempGlbLocation;
+          const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+
+          //The actual load of cached terrain window.WSM
+          await FormIt.ImportFile(storedPath, false, WSM.INVALID_ID, false)
+    
+          const newDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+          const data = await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
+            typesAndConsts.MAIN_HISTORY_ID,
+            previousDelta,
+            newDelta,
+            [WSM.nObjectType.nGroupType]
+          )
+    
+          const createdGroupIds = data.created
+          await deleteFile(storedPath);
+
+          //should only be 1 terrain group.
+          if (createdGroupIds.length === 1) {
+            resolve({
+              allIdsCreated: createdGroupIds,
+              isTerrain: true,
+              isAxm: false,
+            });
           }
-        }
-        throw new Error("Error reading terrain transform from cached window.WSM, did not get 1 created group")
-      });
-    } catch (e) {
-      console.log(`Error loading terrain from cache - ${e}`)
-      return {
-        idArray: [],
+          else {
+            throw new Error("Error reading terrain transform from cached window.WSM, did not get 1 created group");
+          }
+        });
+      } catch (e) {
+        let errorMessage = `Error loading terrain from cache - ${e}`;
+        console.log(errorMessage)
+        reject(errorMessage);
       }
-    }
+    });
   }
   
   //will check for terrain in cache at a regular interval, and resolve promise when it can read from cache
@@ -300,17 +307,7 @@ export async function requestAndLoadGlb(
           null,
           true, 
           async (args) => 
-          {
-            let topLevels = [];
-            const categorizedPaths: Record<string, Record<string, InternalPath[]>> = { proposal: {}, scenario: {} };
-
-            for (const el of topLevels) {
-              const layerType = el.scenario ? "scenario" : "proposal"
-              categorizedPaths[layerType][el.category] = categorizedPaths[layerType][el.category] ?? []
-              categorizedPaths[layerType][el.category].push(el.path)
-            }
-            let proposalCategorizedPaths = categorizedPaths["proposal"];
-            
+          {            
             let finalLocation: string = args.tempGlbLocation;
             //if any of the elementsInGlb are being edited, filter them and then
             //load them separately so we can get their objectId when created as
@@ -340,19 +337,13 @@ export async function requestAndLoadGlb(
               if(!createdInstanceId)
               {
                 deleteFile(finalLocation);
-        
-                resolve({
-                  allIdsCreated: allInstanceIds,
-                  idEditingForConversion,
-                  isTerrain,
-                })
 
                 const errorMessage = `Failed to request and load file into memory for url - ${glbUrl}`;
                 console.warn(errorMessage);
                 reject(errorMessage);
                 return;
               }
-    
+
               //just use the first element node of the glb. We have a 1:1 relationship of an glb to a layer. Meaning we don't split up a glb onto multiple layers.
               const category = getCategoryFromElementPath(
                 elementsToLoadAsContext[0].fullIdPath,
@@ -403,6 +394,87 @@ export async function requestAndLoadGlb(
           })
       } catch (e) {
         reject(`Failed to request and load file into memory for url - ${glbUrl} - error: ${e}`)
+      }
+    })
+  }
+
+  //TODO may be able to share some similar logic with requestAndLoadGlb
+  export async function requestAndLoadAxm(
+    elementData: typesAndConsts.AxmDetail,
+    isEditing: boolean,
+    elementResponseMap: ElementResponse,
+    proposalCategorizedPaths: Record<string, string[]>,
+    hiddenLayers: string[],
+  ): Promise<typesAndConsts.CreatedObjectDetails> {
+
+    return new Promise(async (resolve, reject) => {
+      let axmUrl = `/api/spacemaker-object-storage/v1/${elementData?.properties?.spacemakerObjectStorageReferences[0]}`;
+      try {
+        const fileLocation = `${uuid()}.axm`;
+        const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID);
+
+        await createFile(
+          {
+            fetchUrl: axmUrl,
+            savePath: fileLocation
+          },
+          null,
+          true, 
+          async (args) => 
+          {
+            let storedPath = args.tempGlbLocation;
+            await FormIt.ImportFile(storedPath, false, typesAndConsts.MAIN_HISTORY_ID, false)
+            await deleteFile(storedPath);
+
+            await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+            .then(async(newDelta) => {
+              await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
+                typesAndConsts.MAIN_HISTORY_ID,
+                previousDelta,
+                newDelta,
+                [WSM.nObjectType.nInstanceType]
+              )
+              .then(async (data) => {
+                if (data.created.length > 0) {
+                  if (elementData.parentTransform) {
+                    elementData.parentTransform[12] *= typesAndConsts.METERS_TO_FEET
+                    elementData.parentTransform[13] *= typesAndConsts.METERS_TO_FEET
+                    elementData.parentTransform[14] *= typesAndConsts.METERS_TO_FEET
+
+                    const transf3d = WSM.Geom.Transf3d()
+                    transf3d.data = transpose(elementData.parentTransform)
+
+                    WSM.APITransformObjects(typesAndConsts.MAIN_HISTORY_ID, data.created, transf3d)
+                  }
+
+                  // assign loaded object to a layer to be hidded on save
+                  // if (!isEditing) {
+                  //   const category = getCategoryFromElementPath(elementData.path, proposalCategorizedPaths)
+                  //   await createOrGetOutOfContextLayer(category)
+                  //     .then(async (categoryLayer) => {
+                  //       const layerVisibility = !hiddenLayers.includes(category)
+                  //       await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, data.created)
+                  //       await FormIt.Layers.SetLayerVisibility(category, layerVisibility)
+                  //     })
+                  // }
+
+                  // for (const objectId of data.created) {
+                  //   const hasLevels = !isEmpty(await WSM.APIGetObjectLevelsReadOnly(typesAndConsts.MAIN_HISTORY_ID, objectId))
+                  //   if (isEditing && hasLevels) {
+                  //     const results = await Promise.all(createLayer(typesAndConsts.MAIN_HISTORY_ID, typesAndConsts.formItLayerNames.FORMA_BUILDINGS))
+                  //     let formItLayerId = results[0];
+                  //     await FormIt.Layers.AssignLayerToObjects(formItLayerId, objectId)
+                  //   }
+                  // }
+                }
+              })
+            })
+            //TODO need to return whole list of ids, if we expect to manipulate after.
+            resolve({ allIdsCreated: undefined, isAxm: true } as typesAndConsts.CreatedObjectDetails)
+          }
+        )
+      } catch (e) {
+        reject(`Failed to request and load file into memory for url - ${axmUrl} - error: ${e}`)
       }
     })
   }

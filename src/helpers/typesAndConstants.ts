@@ -49,6 +49,8 @@ export type CreatedObjectDetails = {
   isAxm?: boolean
   isEditing?: boolean
   elementPath?: string
+  allIdsCreated?: Array<number>
+  idEditingForConversion?: number
 }
 
 export type Project = {
@@ -67,10 +69,6 @@ export type ElementDetailsWithLoadInfo = {
   needsConverted: boolean
 } & ElementDetails
 
-
-type GlbUrlDetails = { transform: any; children: Array<ElementDetails> }
-type ElementMap = { [key: string]: GlbUrlDetails & { needsToBeConverted?: boolean } }
-type GlbPathMap = { [key: string]: ElementMap }
 export type GlbUrlMap = { [key: string]: { elements: Array<ElementDetailsWithLoadInfo> } }
 
 export type InternalPath = string

@@ -263,7 +263,6 @@ function FormitForma() {
     useLoadConceptualWebWorker(proposal.projectId, proposal.proposalId);
 
     FormitFormaService.fetchAndLoadElements(
-      undefined,
       [],
       proposal,
       (success) => {

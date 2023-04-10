@@ -7,7 +7,6 @@ import * as uuid from "uuid"
 import FormaService from "../services/forma.service" 
 import { isEmpty } from "lodash-es"
 import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
-import { setGlobalState } from "./stateUtils"
 import Proposal from "../components/proposals/proposal"
 
 export async function getFormitGeometry(names, callback) {
@@ -361,6 +360,7 @@ export async function getWSMLayerID(histID, FormaLayerName) {
   }
 
 export async function createIntegrateAPIElementAndUpdateProposal(
+  terrainElevationTransf3d: any,
   formitGeometry: any,
   proposal: Proposal,
   projectId: string,
@@ -371,6 +371,10 @@ export async function createIntegrateAPIElementAndUpdateProposal(
     let proposalId = proposal.proposalId;
     let proposalUrn = proposal.urn;
 
+    const inverseTerrainElevationTransf3d = terrainElevationTransf3d
+      ? await WSM.Geom.InvertTransform(terrainElevationTransf3d)
+      : undefined;
+
     saveTemp(objectId)
       .then(async (savedAxm) => {
         if(!savedAxm) {
@@ -378,9 +382,8 @@ export async function createIntegrateAPIElementAndUpdateProposal(
           console.error("Can't save temporary wsm file.");
           return;
         }
-        let terrainElevationTransf3d = await WSM.Geom.Transf3d();
         generatePayload(
-          terrainElevationTransf3d, 
+          inverseTerrainElevationTransf3d, 
           proposalId, 
           projectId, 
           formitGeometry,

@@ -2,12 +2,13 @@ import { BaseElement, Child, ElementResponse, BaseProperties } from "@spacemaker
 import { getGlbUrlMapAndAxmList, getPathToUrn } from "../helpers/loadUtils"
 import { getCache, setCache, deleteCacheForKey } from "../helpers/cacheUtils"
 import { parseUrn, elementUrnToUrl } from "../helpers/elementUtils"
-import { loadTerrain, requestAndLoadGlb } from "./loadUtils"
+import { loadTerrain, requestAndLoadAxm, requestAndLoadGlb } from "./loadUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import { downloadChildElements } from "../helpers/useLoadElements"
 import FormaService from "../services/forma.service";
 import { v4 as uuid } from "uuid"
 import { createFile } from "./fileUtils"
+import { setGlobalState } from "../helpers/stateUtils"
 
 //import * as FormItModule from "@spacemakerai/formit-core-standalone"
 
@@ -44,6 +45,9 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
       editingElementPath
     )
     let foundTerrainId: string
+    let terrainPromise: Promise<typesAndConsts.CreatedObjectDetails>
+    let glbLoadPromises: Array<Promise<typesAndConsts.CreatedObjectDetails>> = []
+    let axmLoadPromises: Array<Promise<typesAndConsts.CreatedObjectDetails>> = []
 
     for (const [url, glbValue] of Object.entries(glbUrlMap)) {
       if (url.includes("terrain")) {
@@ -65,19 +69,83 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
           }
         } else {
           foundTerrainId = terrainDetails.id
-
-          loadTerrain(proposalId, terrainDetails)
+          terrainPromise = loadTerrain(proposalId, terrainDetails)
         }
       }
       else {
-        requestAndLoadGlb(
+        glbLoadPromises.push(requestAndLoadGlb(
           url,
           glbValue.elements,
           uuid(),
           proposalCategorizedPaths,
           hiddenLayers,
-        )
+        ));
       }
+    }
+    
+    for (const axmDetails of axmList) {
+      const isEditingAxm = axmDetails.path === editingElementPath
+      axmLoadPromises.push(
+        requestAndLoadAxm(
+          axmDetails,
+          isEditingAxm,
+          elementResponseMap,
+          proposalCategorizedPaths,
+          hiddenLayers,
+        ),
+      )
+    }
+    
+    await Promise.all([
+      terrainPromise,
+      ...glbLoadPromises,
+      ...axmLoadPromises
+    ])
+    .then(([terrainObj, ...createdObjs]) => {
+      fixObjectsElevation(terrainObj, createdObjs)
+    })
+  }
+
+  async function fixObjectsElevation(terrainObj, createdObjs) {
+    //terrain allIdsCreated is length 1, already validated in terrainLoadPromise.
+    const terrainGroupId = terrainObj.allIdsCreated[0]
+
+    const attribIds = await WSM.APIGetStringAttributesByKeyReadOnly(
+      typesAndConsts.MAIN_HISTORY_ID,
+      terrainGroupId,
+      //@ts-ignore
+      FormIt.TERRAIN_KEY,
+    )
+
+    if (attribIds.length === 1) {
+      const value = await WSM.APIGetStringAttributeKeyValueReadOnly(typesAndConsts.MAIN_HISTORY_ID, attribIds[0])
+      const dMinElevation = Number(value.sValue)
+
+      let transf3d = await WSM.Geom.Transf3d();
+      let elevationTransf3D = await WSM.Geom.Vector3d(0.0, 0.0, dMinElevation);
+
+      await WSM.Geom.TranslateTransform(
+        transf3d,
+        elevationTransf3D
+      ).then(async (terrainElevationTransf3d) => {
+        setGlobalState("terrainElevationTransf3d", terrainElevationTransf3d);
+
+        const otherObjs: Array<typesAndConsts.CreatedObjectDetails> = createdObjs.filter((obj) => {
+          return !obj.isTerrain && !obj.isAxm
+        })
+  
+        //handle other non-axm elements.
+        for (const createdObj of otherObjs) {
+          await WSM.APITransformObjects(typesAndConsts.MAIN_HISTORY_ID, createdObj.allIdsCreated, terrainElevationTransf3d)
+  
+          if (createdObj.idEditingForConversion) {
+            await FormIt.GroupEdit.SetInContextEditingPath(createdObj.idEditingForConversion)
+          }
+        }
+      })
+
+    } else {
+      throw new Error("Error reading terrain transform from cached wsm, could not read attribute")
     }
   }
 

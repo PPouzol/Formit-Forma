@@ -3,10 +3,10 @@ import * as typesAndConsts from "../helpers/typesAndConstants"
 import { ElementResponse  } from "@spacemakerai/element-types"
 import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
 import { getFormitGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
-import { InternalPath } from "../helpers/loadUtils"
 import { createCategoryLayers } from "../helpers/layerUtils"
 import Proposal from "../components/proposals/proposal"
 import formaService from "./forma.service"
+import { useGlobalState } from "../helpers/stateUtils"
 
 class FormaSaveService {
   getCookie(cookieName)
@@ -67,9 +67,12 @@ class FormaSaveService {
     getFormitGeometry(typesAndConsts.formItLayerNames.FORMA_BUILDINGS, (formitGeometry, polygonData) => {
       if(!polygonData)
         polygonData = {};
-        
+
       let objectId = 0;
+      const terrainElevationTransf3d = useGlobalState("terrainElevationTransf3d");
+
       createIntegrateAPIElementAndUpdateProposal(
+        terrainElevationTransf3d,
         formitGeometry,
         proposal,
         projectId,
@@ -77,7 +80,7 @@ class FormaSaveService {
         objectId,
         elementResponseMap,
         callback
-      )
+      );
     });
   }
 
@@ -89,7 +92,6 @@ class FormaSaveService {
   }
 
   async fetchAndLoadElements(
-    proposalCategorizedPaths: Record<string, string[]>,
     hiddenLayers: string[],
     proposal: Proposal,
     callback: any
@@ -110,6 +112,16 @@ class FormaSaveService {
     const elementResponseMap: ElementResponse = {
       [proposalElement.urn]: proposalElement
     }
+
+    let topLevels = [];
+    const categorizedPaths: Record<string, Record<string, typesAndConsts.InternalPath[]>> = { proposal: {}, scenario: {} };
+
+    for (const el of topLevels) {
+      const layerType = el.scenario ? "scenario" : "proposal"
+      categorizedPaths[layerType][el.category] = categorizedPaths[layerType][el.category] ?? []
+      categorizedPaths[layerType][el.category].push(el.path)
+    }
+    let proposalCategorizedPaths = categorizedPaths["proposal"];
 
     // Category Layers needs to be created before loading axm/glb to work properly.
     let layersCreated = await createCategoryLayers()
