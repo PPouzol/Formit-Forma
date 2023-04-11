@@ -9,25 +9,22 @@ import { isEmpty } from "lodash-es"
 import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
 import Proposal from "../components/proposals/proposal"
 
-export async function getFormitGeometry(names, callback) {
-    hideLayersBeforeSave()
-      .then(async (previousLayersVisibility) => {
-        FormIt.Layers.SetLayerVisibility(names, false)
-          .then(() => {
-            WSM.Utils.GetAllGeometryInformation(typesAndConsts.MAIN_HISTORY_ID)
-              .then((formitGeometry) =>
-                {
-                  // We need to set 3D Sketch buildings layer visibility to true before getting polygon data
-                  FormIt.Layers.SetLayerVisibility(names, true)
-                  .then(() => {
-                    returnLayersToPreviousVibility(previousLayersVisibility)
-                      .then(() => {
-                        getPolygonData(typesAndConsts.MAIN_HISTORY_ID, formitGeometry, callback);
-                      })
-                  });
+export async function getFormitGeometry(previousLayersVisibility, names, callback) {
+    FormIt.Layers.SetLayerVisibility(names, false)
+      .then(() => {
+        WSM.Utils.GetAllGeometryInformation(typesAndConsts.MAIN_HISTORY_ID)
+          .then((formitGeometry) =>
+            {
+              // We need to set 3D Sketch buildings layer visibility to true before getting polygon data
+              FormIt.Layers.SetLayerVisibility(names, true)
+                .then(() => {
+                  returnLayersToPreviousVibility(previousLayersVisibility)
+                    .then(() => {
+                      getPolygonData(typesAndConsts.MAIN_HISTORY_ID, formitGeometry, callback);
+                    })
                 });
-          })
-      });
+            });
+      })
   }
 
 export async function getAllGeometryInformations() {
@@ -63,7 +60,7 @@ export async function hideLayersBeforeSave() {
       typesAndConsts.formItLayerNames.FORMA_RAILS,
       typesAndConsts.formItLayerNames.FORMA_PROPERTY_BOUNDARY,
       typesAndConsts.formItLayerNames.FORMA_ZONE,
-      typesAndConsts.formItLayerNames.FORMA_BUILDING_ENVELOPE,
+      typesAndConsts.formItLayerNames.FORMA_BUILDING_ENVELOPE
     ];
 
     let results = [];
@@ -307,10 +304,6 @@ export async function generatePayload(
   elementResponseMap,
   callback) 
 {
-  const inverseTerrainElevationTransf3d = terrainElevationTransf3d
-    ? WSM.Geom.InvertTransform(terrainElevationTransf3d)
-    : undefined
-
   const floorGeometriesByBuildingId = await getFloorGeometriesByBuildingId()
 
   // Removing empty conceptual element
@@ -332,7 +325,7 @@ export async function generatePayload(
   }
 
   formitGeometryToIntegrateAPIPayload(
-      inverseTerrainElevationTransf3d,
+      terrainElevationTransf3d,
       formitGeometry,
       floorGeometriesByBuildingId
     )

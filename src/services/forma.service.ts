@@ -46,6 +46,26 @@ class FormaService {
     });
   }
   
+  getElement(
+    elementType: string,
+    elementId: string,
+    revision: string,
+    authContext: string,
+  ): Promise<ElementResponse | null> {
+    try {
+      const url = `/api/${elementType}/elements/${elementId}/revisions/${revision}?authcontext=${authContext}&version=2`;
+      return fetch(url)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        return res.json();
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
   getProposalElement(
     elementId: string,
     authContext: string,

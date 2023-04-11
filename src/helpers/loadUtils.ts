@@ -360,6 +360,7 @@ export async function requestAndLoadGlb(
     
               const layerVisibility = !hiddenLayers.includes(category)
               FormIt.Layers.SetLayerVisibility(category, layerVisibility)
+              FormIt.Layers.SetLayerPickable(category, false)
     
               allInstanceIds = [...allInstanceIds, createdInstanceId]
             }
@@ -402,7 +403,6 @@ export async function requestAndLoadGlb(
   export async function requestAndLoadAxm(
     elementData: typesAndConsts.AxmDetail,
     isEditing: boolean,
-    elementResponseMap: ElementResponse,
     proposalCategorizedPaths: Record<string, string[]>,
     hiddenLayers: string[],
   ): Promise<typesAndConsts.CreatedObjectDetails> {
@@ -448,24 +448,26 @@ export async function requestAndLoadGlb(
                   }
 
                   // assign loaded object to a layer to be hidded on save
-                  // if (!isEditing) {
-                  //   const category = getCategoryFromElementPath(elementData.path, proposalCategorizedPaths)
-                  //   await createOrGetOutOfContextLayer(category)
-                  //     .then(async (categoryLayer) => {
-                  //       const layerVisibility = !hiddenLayers.includes(category)
-                  //       await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, data.created)
-                  //       await FormIt.Layers.SetLayerVisibility(category, layerVisibility)
-                  //     })
-                  // }
+                  if (!isEditing) {
+                    const category = getCategoryFromElementPath(elementData.path, proposalCategorizedPaths)
+                    await createOrGetOutOfContextLayer(category)
+                      .then(async (categoryLayer) => {
+                        const layerVisibility = !hiddenLayers.includes(category)
+                        await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, data.created)
+                        await FormIt.Layers.SetLayerVisibility(category, layerVisibility)
+                        await FormIt.Layers.SetLayerPickable(categoryLayer.formItLayerId, false)
+                      })
+                  }
 
-                  // for (const objectId of data.created) {
-                  //   const hasLevels = !isEmpty(await WSM.APIGetObjectLevelsReadOnly(typesAndConsts.MAIN_HISTORY_ID, objectId))
-                  //   if (isEditing && hasLevels) {
-                  //     const results = await Promise.all(createLayer(typesAndConsts.MAIN_HISTORY_ID, typesAndConsts.formItLayerNames.FORMA_BUILDINGS))
-                  //     let formItLayerId = results[0];
-                  //     await FormIt.Layers.AssignLayerToObjects(formItLayerId, objectId)
-                  //   }
-                  // }
+                  for (const objectId of data.created) {
+                    const hasLevels = !isEmpty(await WSM.APIGetObjectLevelsReadOnly(typesAndConsts.MAIN_HISTORY_ID, objectId))
+                    if (isEditing && hasLevels) {
+                      const results = await Promise.all(createLayer(typesAndConsts.MAIN_HISTORY_ID, typesAndConsts.formItLayerNames.FORMA_BUILDINGS))
+                      let formItLayerId = results[0];
+                      await FormIt.Layers.AssignLayerToObjects(formItLayerId, objectId)
+                      await FormIt.Layers.SetLayerPickable(formItLayerId, false)
+                    }
+                  }
                 }
               })
             })

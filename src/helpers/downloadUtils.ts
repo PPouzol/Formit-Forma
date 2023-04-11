@@ -8,21 +8,9 @@ import { downloadChildElements } from "../helpers/useLoadElements"
 import FormaService from "../services/forma.service";
 import { v4 as uuid } from "uuid"
 import { createFile } from "./fileUtils"
+import { createLayer } from "./layerUtils"
 import { setGlobalState } from "../helpers/stateUtils"
-
-//import * as FormItModule from "@spacemakerai/formit-core-standalone"
-
-// //@ts-ignore
-// import FormItWasmURL from "../../node_modules/@spacemakerai/formit-core-standalone/dist/FormIt.ems.wasm?url"
-
-// self["formit_scriptBinaryBlobURL"] = {
-//   "FormIt.ems.wasm": FormItWasmURL,
-// }
-
-// //Not sure this worker needs to listen to messages, just use an empty function for now.
-// window.FormItReceiveCoreMessage = () => {
-//   /* */
-// }
+import { syncCameraFromForma } from "../helpers/cameraUtils"
 
 export function downloadAllChild(proposalElement, authContext, elementResponseMap) {
   let promises = []
@@ -78,7 +66,7 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
           glbValue.elements,
           uuid(),
           proposalCategorizedPaths,
-          hiddenLayers,
+          hiddenLayers
         ));
       }
     }
@@ -89,24 +77,67 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
         requestAndLoadAxm(
           axmDetails,
           isEditingAxm,
-          elementResponseMap,
           proposalCategorizedPaths,
           hiddenLayers,
         ),
       )
     }
-    
+
     await Promise.all([
       terrainPromise,
       ...glbLoadPromises,
       ...axmLoadPromises
     ])
     .then(([terrainObj, ...createdObjs]) => {
-      fixObjectsElevation(terrainObj, createdObjs)
+      addTerrainToLayer(terrainObj)
+        .then(async () => {
+          fixObjectsElevation(terrainObj, createdObjs, proposalElement.projectId)
+        })
     })
   }
 
-  async function fixObjectsElevation(terrainObj, createdObjs) {
+  async function addTerrainToLayer(terrainObj) {
+    const terrainGroupId = terrainObj.allIdsCreated[0]
+    let terrainInstanceId
+
+    const instanceIds = await WSM.APIGetObjectsByTypeReadOnly(
+      typesAndConsts.MAIN_HISTORY_ID,
+      terrainGroupId,
+      WSM.nObjectType.nInstanceType,
+    )
+
+    if (instanceIds.length === 1) {
+      terrainInstanceId = instanceIds[0]
+    } else {
+      console.error("Error getting terrain instance, did not create 1 instance")
+    }
+
+    const results = await Promise.all(createLayer(typesAndConsts.MAIN_HISTORY_ID, typesAndConsts.formItLayerNames.FORMA_TERRAIN))
+    let formItTerrainLayerId = results[0];
+
+    await FormIt.Layers.AssignLayerToObjects(formItTerrainLayerId, terrainInstanceId)
+    await FormIt.Layers.SetLayerPickable(formItTerrainLayerId, false)
+
+    const nRefHistID = await WSM.APIGetGroupReferencedHistoryReadOnly(typesAndConsts.MAIN_HISTORY_ID, terrainGroupId)
+    const meshArray = await WSM.APIGetAllObjectsByTypeReadOnly(nRefHistID, WSM.nObjectType.nMeshType)
+
+    const hintObject = {
+      //@ts-ignore
+      [WSM.INFERENCE_HINT_FORCEZNORMAL]: true,
+      //@ts-ignore
+      [WSM.INFERENCE_HINT_NO_VERTEX_INF]: true,
+    }
+
+    await WSM.Utils.SetOrCreateStringAttributeForObject(
+      nRefHistID,
+      meshArray[0],
+      //@ts-ignore
+      WSM.INFERENCE_HINT,
+      JSON.stringify(hintObject),
+    )
+  }
+
+  async function fixObjectsElevation(terrainObj, createdObjs, authContext) {
     //terrain allIdsCreated is length 1, already validated in terrainLoadPromise.
     const terrainGroupId = terrainObj.allIdsCreated[0]
 
@@ -142,8 +173,9 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
             await FormIt.GroupEdit.SetInContextEditingPath(createdObj.idEditingForConversion)
           }
         }
+        
+        //await syncCameraFromForma(transf3d, terrainElevationTransf3d, authContext);
       })
-
     } else {
       throw new Error("Error reading terrain transform from cached wsm, could not read attribute")
     }

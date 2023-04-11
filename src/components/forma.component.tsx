@@ -7,8 +7,8 @@ import Project from "./projects/project"
 import Proposal from "./proposals/proposal"
 import FormitFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
-import { getTerrainCache } from "../helpers/loadUtils"
 import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
+import { useGlobalState } from "../helpers/stateUtils"
 
 function FormitForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -280,11 +280,13 @@ function FormitForma() {
     message.className = "info";
     message.textContent = "Sending datas to Forma...";
     let projectId = project.projectId;
+
     FormitFormaService.save(
       {
         projectId,
         proposal,
-        elementResponseMap
+        elementResponseMap,
+        terrainElevationTransf3d
       }, 
       (success) => {
         setSync(true);
@@ -307,6 +309,8 @@ function FormitForma() {
   // elements
   const [elementResponseMap, setElements] = useState<ElementResponse>({})
   const [synced, setSync] = useState(false)
+
+  const [terrainElevationTransf3d] = useGlobalState("terrainElevationTransf3d");
   
   useEffect(() => {
     // on start, disable the button. 

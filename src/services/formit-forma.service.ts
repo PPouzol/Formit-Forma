@@ -1,12 +1,17 @@
 
+import {
+  Child,
+  Urn,
+  BaseElement
+} from "@spacemakerai/element-types"
+import { parseUrn } from "../helpers/elementUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import { ElementResponse  } from "@spacemakerai/element-types"
 import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
-import { getFormitGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
+import { hideLayersBeforeSave, getFormitGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
 import { createCategoryLayers } from "../helpers/layerUtils"
 import Proposal from "../components/proposals/proposal"
 import formaService from "./forma.service"
-import { useGlobalState } from "../helpers/stateUtils"
 
 class FormaSaveService {
   getCookie(cookieName)
@@ -54,34 +59,84 @@ class FormaSaveService {
   async save({
     projectId,
     proposal,
-    elementResponseMap
+    elementResponseMap,
+    terrainElevationTransf3d
   }: {
     projectId: string
     proposal: Proposal
-    elementResponseMap: ElementResponse
+    elementResponseMap: ElementResponse,
+    terrainElevationTransf3d: any
   }, callback: any) {  
+    this.beforeSaveLayerHandling()
+      .then(async() => {
+        hideLayersBeforeSave()
+          .then(async (previousLayersVisibility) => {
+            // Make sure each top level body and mesh is put into its own instance.
+            // The code assumes that levels are only applied to instances at this
+            // point. If that is incorrect, we'll need to move the levels from bodies
+            // and meshes unto their containing instance.
+            getFormitGeometry(previousLayersVisibility, 
+              typesAndConsts.formItLayerNames.FORMA_BUILDINGS, 
+              (formitGeometry, polygonData) => {
+                if(!polygonData)
+                  polygonData = {};
+
+                let objectId = 0;
+
+                createIntegrateAPIElementAndUpdateProposal(
+                  terrainElevationTransf3d,
+                  formitGeometry,
+                  proposal,
+                  projectId,
+                  polygonData,
+                  objectId,
+                  elementResponseMap,
+                  callback
+                );
+              }
+            );
+        });
+      })
+  }
+
+  async beforeSaveLayerHandling() {
     // Make sure each top level body and mesh is put into its own instance.
     // The code assumes that levels are only applied to instances at this
     // point. If that is incorrect, we'll need to move the levels from bodies
     // and meshes unto their containing instance.
-    getFormitGeometry(typesAndConsts.formItLayerNames.FORMA_BUILDINGS, (formitGeometry, polygonData) => {
-      if(!polygonData)
-        polygonData = {};
+    const aBodiesAndMeshes = []
+    const aOtherForInstance = []
+    const topLevels = await WSM.APIGetAllNonOwnedReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+    for (const nObjID of topLevels) {
+      const nType =  await WSM.APIGetObjectTypeReadOnly(typesAndConsts.MAIN_HISTORY_ID, nObjID)
+      if (nType === WSM.nObjectType.nBodyType || nType === WSM.nObjectType.nMeshType) {
+        aBodiesAndMeshes.push(nObjID)
+      } else if (
+        nType === WSM.nFaceType ||
+        nType === WSM.nEdgeType ||
+        nType === WSM.nVertexType ||
+        nType === WSM.nLineMeshType ||
+        nType === WSM.nPointMeshType
+      ) {
+        aOtherForInstance.push(nObjID)
+      }
+    }
 
-      let objectId = 0;
-      const terrainElevationTransf3d = useGlobalState("terrainElevationTransf3d");
+    if (aBodiesAndMeshes.length > 0 || aOtherForInstance.length > 0) {
+      await FormIt.UndoManagement.BeginState()
 
-      createIntegrateAPIElementAndUpdateProposal(
-        terrainElevationTransf3d,
-        formitGeometry,
-        proposal,
-        projectId,
-        polygonData,
-        objectId,
-        elementResponseMap,
-        callback
-      );
-    });
+      // Create one instance per each body and mesh.
+      for (const nObjID of aBodiesAndMeshes) {
+        await WSM.Utils.CreateAlignedAndCenteredGroup(typesAndConsts.MAIN_HISTORY_ID, [nObjID])
+      }
+
+      if (aOtherForInstance.length > 0) {
+        // Create one instance for all the remaining stuff
+        await WSM.Utils.CreateAlignedAndCenteredGroup(typesAndConsts.MAIN_HISTORY_ID, aOtherForInstance)
+      }
+
+      await FormIt.UndoManagement.EndState("Move toplevels to instances")
+    }
   }
 
   async getElementsAndSaveCache(
@@ -89,6 +144,45 @@ class FormaSaveService {
     callback: any
   ) {
     await getElementsAndSaveCache(proposal.projectId, proposal.proposalId, callback);
+  }
+  
+  getTopLevelObjects(
+    elements: Record<Urn, BaseElement>,
+    rootUrn: string,
+    rootKey: typesAndConsts.InternalPath = typesAndConsts.ROOT_KEY,
+  ): { child: Child; parentPath: typesAndConsts.InternalPath; scenario: boolean }[] {
+    let prop = elements[rootUrn];
+    const proposalChildren = prop.children || []
+    const scenarioChild: Child | undefined = proposalChildren?.find((c) => prop.properties?.flags?.[c.key]?.scenario)
+
+    const topLevelElements: { child: Child; parentPath: typesAndConsts.InternalPath; scenario: boolean }[] = []
+
+    for (let child of proposalChildren) {
+      if (child === scenarioChild) continue
+      topLevelElements.push({ child, parentPath: rootKey, scenario: false })
+    }
+
+    return topLevelElements
+  }
+
+  buildElementInfo(
+    child: Child,
+    parentPath: typesAndConsts.InternalPath,
+    scenario: boolean,
+    elements: Record<Urn, BaseElement>,
+  ): typesAndConsts.ElementInfo[] {
+    const element = elements[child.urn]
+    const path = parentPath + "/" + child.key
+    const category = typesAndConsts.categoryMapping[element.properties?.category as typesAndConsts.Category] ?? "generic"
+    if (category === "terrain") return []
+    return [
+      {
+        path,
+        category,
+        scenario,
+        element
+      },
+    ]
   }
 
   async fetchAndLoadElements(
@@ -113,10 +207,40 @@ class FormaSaveService {
       [proposalElement.urn]: proposalElement
     }
 
-    let topLevels = [];
+    let elements: Record<Urn, BaseElement> = {
+      [proposalElement.urn]: proposalElement
+    }
+
+    for(const element of proposalElement.children)
+    {
+      const parsedUrn = parseUrn(element.urn);
+      let type = parsedUrn.system;
+      let elementId = parsedUrn.id;
+      let revision = parsedUrn.revision;
+      await formaService.getElement(
+        type,
+        elementId,
+        revision,
+        proposal.projectId,
+      ).then((elementResponse) => {
+        let urn = element.urn;
+        elements[urn] = elementResponse[element.urn]
+      })
+    }
+
+    const topLevelObjects = this.getTopLevelObjects(elementResponseMap, proposalElement.urn)
     const categorizedPaths: Record<string, Record<string, typesAndConsts.InternalPath[]>> = { proposal: {}, scenario: {} };
 
-    for (const el of topLevels) {
+    const toplevel: typesAndConsts.ElementInfo[] = topLevelObjects.flatMap(({ child, parentPath }) =>
+      this.buildElementInfo(
+        child,
+        parentPath,
+        false,
+        elements
+      ),
+    )
+
+    for (const el of toplevel) {
       const layerType = el.scenario ? "scenario" : "proposal"
       categorizedPaths[layerType][el.category] = categorizedPaths[layerType][el.category] ?? []
       categorizedPaths[layerType][el.category].push(el.path)

@@ -6,6 +6,40 @@ import {
   BaseElement
 } from "@spacemakerai/element-types"
 
+export const categories = [
+  "site_limit",
+  "building",
+  "vegetation",
+  "generic",
+  "road",
+  "rails",
+  "property_boundary",
+  "zone",
+  "terrain",
+  "constraints",
+] as const
+
+export type Category = (typeof categories)[number]
+// temporary (?) mapping while we have some mismatch between categories in different systems
+export const categoryMapping: Record<string, Category> = {
+  ...Object.fromEntries(categories.map((c) => [c, c])),
+  buildings: "building",
+  roads: "road",
+  tree_area: "vegetation",
+  tree_line: "vegetation",
+  ConceptualRoot: "generic",
+  ConceptualElement: "generic",
+  "property-boundaries": "property_boundary", //temporary, to support deprecated category naming
+}
+
+
+export type ElementInfo = {
+  path: InternalPath
+  element: BaseElement
+  category: Category
+  scenario: boolean
+}
+
 type Point = [number, number]
 export type Polygon = Point[]
 export type MultiRingPolygon = Polygon[]

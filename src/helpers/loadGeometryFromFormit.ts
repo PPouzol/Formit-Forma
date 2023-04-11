@@ -82,11 +82,6 @@ export const formitGeometryToIntegrateAPIPayload = async (
     await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
   }
 
-  // createLayer(MAIN_HISTORY_ID, formItLayerNames.FORMA_BUILDINGS)
-  //   .then(async (buildingsLayer) => {
-  //     await FormIt.Layers.DeleteLayers([buildingsLayer.formItLayerId])
-  //   });
-
   return payload
 }
 
