@@ -1,6 +1,6 @@
 {
-    "PluginName": "Formit-Forma",
-    "PluginDescription": "Connection between Formit and Forma environment",
+    "PluginName": "FormIt-Forma",
+    "PluginDescription": "Connection between FormIt and Forma environment",
     "PluginType": "Panel",
     "Panel": "PLUGINLOCATION/index.html",
     "PanelIcon": "PLUGINLOCATION/assets/sync.png",
