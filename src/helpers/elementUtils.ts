@@ -1,4 +1,5 @@
 import { Urn as NextGenElementUrn } from "@spacemakerai/element-types"
+import { ElementResponse } from "@spacemakerai/element-types"
 
 export const parseUrn = (
   urn: NextGenElementUrn | string,
@@ -45,4 +46,16 @@ export const elementUrnToUrl = (
   }
 
   return elementUrl
+}
+
+export function removeElementFromMap(elementResponseMap, keyToRemove)
+{
+  let clearedMap: ElementResponse = {};
+  for (const [urn, element] of Object.entries(elementResponseMap)) {
+    if(urn !== keyToRemove)
+    {
+      clearedMap[urn] = element;
+    }
+  }
+  return clearedMap;
 }

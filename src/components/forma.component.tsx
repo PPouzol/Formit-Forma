@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { ElementResponse } from "@spacemakerai/element-types"
 import fetchResultObj from "../common/interfaces";
 import FormaService from "../services/forma.service";
 import ProjectList from "./projects/project-list.component";
 import Project from "./projects/project"
 import Proposal from "./proposals/proposal"
-import FormitFormaService from "../services/formit-forma.service";
+import FormItFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
 import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
-import { useGlobalState } from "../helpers/stateUtils"
+import { setGlobalState, useGlobalState } from "../helpers/stateUtils"
 
-function FormitForma() {  
+function FormItForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
     fetchFunction
       .then(handleResults)
@@ -112,12 +111,8 @@ function FormitForma() {
                   {
                     retrieveProposalElements(project.projectId, proposal.proposalId)
                       .then((proposalElement) => {
-                        const elementResponseMap: ElementResponse = {
-                          [proposalElement.urn]: proposalElement
-                        }
-
-                        setElements(elementResponseMap)
-                      })
+                        elementResponseMap[proposalElement.urn] = proposalElement
+                      });
                   }
                 }
               }
@@ -143,7 +138,10 @@ function FormitForma() {
           setMessage("");
         }
         else {
-          setSync(false);
+          if(statusType !== "error")
+          {
+            setSync(false);
+          }
         }
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
@@ -200,12 +198,8 @@ function FormitForma() {
 
           retrieveProposalElements(project.projectId, matchingProposal[0].proposalId)
             .then((proposalElement) => {
-              const elementResponseMap: ElementResponse = {
-                 [proposalElement.urn]: proposalElement
-              }
-
-              setElements(elementResponseMap)
-            })
+              elementResponseMap[proposalElement.urn] = proposalElement
+            });
         }
         else {
           setCurrentProposal(null);
@@ -219,28 +213,50 @@ function FormitForma() {
   }
 
   async function updateButtonsState(proposalId) {
-    const hasSomethingToSave = await FormIt.Model.IsModified();
     const idsProvided = project !== null && project?.projectId !== "" && proposalId !== "";
     let syncButton = document.getElementById("sync-btn");
     let loadButton = document.getElementById("load-btn");
+
     if(syncButton !== null)
     {
-      (syncButton as HTMLButtonElement).disabled = !hasSomethingToSave || !idsProvided;
+      let button = (syncButton as HTMLButtonElement);
+      let disabled = !idsProvided;
+      button.disabled = disabled;
+      if(!disabled)
+      {
+        button.classList.remove('disabled');
+      }
+      else if(!button.classList.contains('disabled'))
+      {
+        button.classList.add('disabled');
+      }
     }   
     
     if(loadButton !== null)
     {
-      (loadButton as HTMLButtonElement).disabled = !idsProvided;
+      let button = (loadButton as HTMLButtonElement);
+      let disabled = !idsProvided;
+      button.disabled = disabled;
+      if(!disabled)
+      {
+        button.classList.remove('disabled');
+      }
+      else if(!button.classList.contains('disabled'))
+      {
+        button.classList.add('disabled');
+      }
     }   
   }
 
   async function onLoadClick() {
-    let container = document.getElementById("projectlist-container");
-    container.classList.add('disabled');
+    let loadContainer = document.getElementById("working-container");
+    loadContainer.style.display = "flex";
+    let plugContainer = document.getElementById("plugin-container");
+    plugContainer.classList.add('disabled');
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Loading datas from Forma...";
-    
+
     // to be reactived if we want to offer possibility to save current edits locally
     // let hasSomethingToSave = await FormIt.Model.IsModified();
     // if(hasSomethingToSave)
@@ -262,13 +278,17 @@ function FormitForma() {
 
     useLoadConceptualWebWorker(proposal.projectId, proposal.proposalId);
 
-    FormitFormaService.fetchAndLoadElements(
+    FormItFormaService.fetchAndLoadElements(
       [],
       proposal,
-      (success) => {
-        setMessageType(success ? "success" : "error");
-        setMessage(success ? "Datas have been loaded from Forma" : "Loading failed");
-        container.classList.remove('disabled');
+      (proposalId, elementResponseMap, loadedIntegrateElements) => {
+        setMessageType(proposalId ? "success" : "error");
+        setMessage(proposalId ? "Datas have been loaded from Forma" : "Loading failed");
+        loadContainer.style.display = "none";
+        plugContainer.classList.remove('disabled');
+
+        setGlobalState("elements", elementResponseMap);
+        setGlobalState("loadedIntegrate", loadedIntegrateElements);
       }
     );
   }
@@ -281,17 +301,27 @@ function FormitForma() {
     message.textContent = "Sending datas to Forma...";
     let projectId = project.projectId;
 
-    FormitFormaService.save(
+    FormItFormaService.save(
       {
         projectId,
         proposal,
         elementResponseMap,
-        terrainElevationTransf3d
+        terrainElevationTransf3d,
+        loadedIntegrateElements
       }, 
-      (success) => {
+      (result) => {
+        debugger
         setSync(true);
-        setMessageType(success ? "success" : "error");
-        setMessage(success ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
+        if(result && (typeof result === 'string' || result instanceof String))
+        {
+          setMessageType("error");
+          setMessage(`Synchronization failed: ${result}`);
+        }
+        else
+        {
+          setMessageType(result ? "success" : "error");
+          setMessage(result ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
+        }
         container.classList.remove('disabled');
       }
     );
@@ -307,9 +337,10 @@ function FormitForma() {
   // proposals
   const [proposal, setCurrentProposal] = useState<Proposal>(null)
   // elements
-  const [elementResponseMap, setElements] = useState<ElementResponse>({})
   const [synced, setSync] = useState(false)
 
+  const [elementResponseMap] = useGlobalState("elements");
+  const [loadedIntegrateElements] = useGlobalState("loadedIntegrate");
   const [terrainElevationTransf3d] = useGlobalState("terrainElevationTransf3d");
   
   useEffect(() => {
@@ -326,45 +357,58 @@ function FormitForma() {
       (loadButton as HTMLButtonElement).disabled = true;
     }  
   }, [])
+  
+  // get workspaces from API
+  useEffect(() => {
+    debugger
+    
+  }, [statusType])
 
   // get workspaces from API
   useEffect(() => {
     handleFetchValues(FormaService.getWorkspaces(), 
-          handleWorkspacesFetchedValues.bind(this));
+      handleWorkspacesFetchedValues.bind(this));
   }, [synced])
 
 	return (
     <div id="FormaControls" className="col-md-12">
-      <div className="plugin plugin-container">
-        <h3 id="identifier">Welcome to Formit-Forma plugin</h3>
-        <select id="workspace-select" 
-            className="fetchSelect" 
-            onChange={handleWorkspaceSelectChange.bind(this)}
-            defaultValue={""}
-            hidden
-          >
-            { 
-              workspaces?.map(({ id, name }) => (
-                <option value={id} key={id}>{name}</option>
-              ))
-            }
-        </select>
-        <ProjectList 
-          projects={projects}
-          projectSelectionHandler={setSelectedProjectId}
-          proposalSelectionHandler={setSelectedProposalId}
-          selectedProjectId={project?.projectId}
-          selectedProposalId={proposal?.proposalId}>
-        </ProjectList>
-        <div id="action">
-          <button className="st" id="load-btn" onClick={onLoadClick}>Load</button> 
-          <button className="st" id="clear-btn" disabled>Clear</button> 
-          <button className="st" id="sync-btn" onClick={onSyncClick}>Sync</button>  
-          <label id="message" className={statusType}>{statusMessage}</label>   
+      <div id="working-container" className="hidden">
+        {/* <img id="working-screen"
+              src="assets/favicon.svg" 
+              width="115" height="115">
+        </img> */}
+        <label>Fetching from Forma...</label>
+      </div>
+      <div id="plugin-container" className="plugin">
+        <div id="plugin-content">
+          <select id="workspace-select" 
+              className="fetchSelect" 
+              onChange={handleWorkspaceSelectChange.bind(this)}
+              defaultValue={""}
+              hidden
+            >
+              { 
+                workspaces?.map(({ id, name }) => (
+                  <option value={id} key={id}>{name}</option>
+                ))
+              }
+          </select>
+          <ProjectList 
+            projects={projects}
+            projectSelectionHandler={setSelectedProjectId}
+            proposalSelectionHandler={setSelectedProposalId}
+            selectedProjectId={project?.projectId}
+            selectedProposalId={proposal?.proposalId}>
+          </ProjectList>
+          <div id="action">
+            <button className="st blue disabled" id="load-btn" onClick={onLoadClick}>Fetch from Forma</button> 
+            <button className="st gray disabled" id="sync-btn" onClick={onSyncClick}>Send to Forma</button>  
+          </div>
         </div>
+        <label id="message" className={statusType}>{statusMessage}</label>   
       </div>
     </div>
 	);
 }
 
-export default FormitForma
+export default FormItForma

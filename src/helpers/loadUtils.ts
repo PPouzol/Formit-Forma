@@ -295,7 +295,8 @@ export async function requestAndLoadGlb(
     hiddenLayers: string[]
   ) {
     const fileLocation = `${fileId}.glb`
-    const isTerrain: boolean = glbUrl.includes("terrain")
+    const isTerrain: boolean = glbUrl.includes("/terrain/")
+    const needElevationFix: boolean = !glbUrl.includes("/parametric/")
   
     return new Promise(async (resolve, reject) => {
       try {
@@ -391,6 +392,7 @@ export async function requestAndLoadGlb(
               allIdsCreated: allInstanceIds,
               idEditingForConversion,
               isTerrain,
+              needElevationFix: needElevationFix
             })
           })
       } catch (e) {
@@ -472,7 +474,7 @@ export async function requestAndLoadGlb(
               })
             })
             //TODO need to return whole list of ids, if we expect to manipulate after.
-            resolve({ allIdsCreated: undefined, isAxm: true } as typesAndConsts.CreatedObjectDetails)
+            resolve({ allIdsCreated: undefined, isAxm: true, needElevationFix: true } as typesAndConsts.CreatedObjectDetails)
           }
         )
       } catch (e) {
@@ -550,6 +552,7 @@ async function loadGltf({
   )
 
   if (instanceIDs.length !== 1) {
+    debugger
     console.error("Created instanceIds should be 1")
     return
   }

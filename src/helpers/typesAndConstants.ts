@@ -32,7 +32,6 @@ export const categoryMapping: Record<string, Category> = {
   "property-boundaries": "property_boundary", //temporary, to support deprecated category naming
 }
 
-
 export type ElementInfo = {
   path: InternalPath
   element: BaseElement
@@ -53,20 +52,20 @@ export type SelectionObject = {
     objectName: string
   }
   
-export type FormitTransform = {
+export type FormItTransform = {
   data: number[]
   objectName?: string
 }
 
-export type FormitMesh = {
+export type FormItMesh = {
   indices: number[]
   objectName: string
   vertices: number[]
 }
 
-export type FormitGeometry = {
-  meshes: FormitMesh[]
-  transforms: FormitTransform[]
+export type FormItGeometry = {
+  meshes: FormItMesh[]
+  transforms: FormItTransform[]
 }
 
 export type ElementDetails = {
@@ -81,6 +80,7 @@ export type CreatedObjectDetails = {
   idArray?: Array<number>
   isTerrain?: boolean
   isAxm?: boolean
+  needElevationFix?: boolean
   isEditing?: boolean
   elementPath?: string
   allIdsCreated?: Array<number>

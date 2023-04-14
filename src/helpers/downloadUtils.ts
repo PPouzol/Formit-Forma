@@ -10,21 +10,21 @@ import { v4 as uuid } from "uuid"
 import { createFile } from "./fileUtils"
 import { createLayer } from "./layerUtils"
 import { setGlobalState } from "../helpers/stateUtils"
-import { syncCameraFromForma } from "../helpers/cameraUtils"
 
-export function downloadAllChild(proposalElement, authContext, elementResponseMap) {
+export function downloadAllChild(proposalElement, authContext, elementResponseMap, loadedIntegrateElements) {
   let promises = []
     for (const child of proposalElement.children) {
       promises.push(downloadChildElements(
         child,
         authContext,
-        elementResponseMap
+        elementResponseMap,
+        loadedIntegrateElements
       ))
     }
     return promises
   }
 
-export async function getUrlAndLoad(elementResponseMap, proposalElement, proposalId, editingElementPath, 
+export async function getUrlAndLoad(elementResponseMap, proposalElement, proposal, editingElementPath, 
   proposalCategorizedPaths, hiddenLayers) {
     const pathMap = getPathToUrn(elementResponseMap, proposalElement.urn)
     const { glbUrlMap, axmList } = getGlbUrlMapAndAxmList(
@@ -57,7 +57,7 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
           }
         } else {
           foundTerrainId = terrainDetails.id
-          terrainPromise = loadTerrain(proposalId, terrainDetails)
+          terrainPromise = loadTerrain(proposal.proposalId, terrainDetails)
         }
       }
       else {
@@ -91,7 +91,7 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
     .then(([terrainObj, ...createdObjs]) => {
       addTerrainToLayer(terrainObj)
         .then(async () => {
-          fixObjectsElevation(terrainObj, createdObjs, proposalElement.projectId)
+          fixObjectsElevation(terrainObj, createdObjs, proposal.projectId)
         })
     })
   }
@@ -162,7 +162,7 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
         setGlobalState("terrainElevationTransf3d", terrainElevationTransf3d);
 
         const otherObjs: Array<typesAndConsts.CreatedObjectDetails> = createdObjs.filter((obj) => {
-          return !obj.isTerrain && !obj.isAxm
+          return !obj.isTerrain && obj.needElevationFix
         })
   
         //handle other non-axm elements.
@@ -173,8 +173,6 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
             await FormIt.GroupEdit.SetInContextEditingPath(createdObj.idEditingForConversion)
           }
         }
-        
-        //await syncCameraFromForma(transf3d, terrainElevationTransf3d, authContext);
       })
     } else {
       throw new Error("Error reading terrain transform from cached wsm, could not read attribute")

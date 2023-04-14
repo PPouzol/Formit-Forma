@@ -7,14 +7,16 @@ type InitialState = {
     elements: Record<Urn, BaseElement>,
     synced: boolean,
     terrainElevationTransf3d: any,
-    rootUrn: string
+    rootUrn: string,
+    loadedIntegrate: string[]
 }
 
 const initialState: InitialState = {
     elements: {},
     synced: false,
     terrainElevationTransf3d: null,
-    rootUrn: DUMMY_ROOT_URN
+    rootUrn: DUMMY_ROOT_URN,
+    loadedIntegrate: []
 }
 
 export const { useGlobalState, setGlobalState } = createGlobalState(initialState)

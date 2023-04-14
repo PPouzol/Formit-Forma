@@ -50,7 +50,7 @@ function ProjectComponent(props: Props) {
             </ProjectS.Content>
         </ProjectS.Container>
         <div id={project.proposalsListContainer} 
-            className={isSelected ? "proposal-visible" : "proposal-hidden"} 
+            className={isSelected ? "visible" : "hidden"} 
         >
             <ProposalList 
                 proposals={project.proposals}

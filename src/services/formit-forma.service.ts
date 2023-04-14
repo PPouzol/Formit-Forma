@@ -8,7 +8,7 @@ import { parseUrn } from "../helpers/elementUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import { ElementResponse  } from "@spacemakerai/element-types"
 import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
-import { hideLayersBeforeSave, getFormitGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
+import { hideLayersBeforeSave, getFormItGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
 import { createCategoryLayers } from "../helpers/layerUtils"
 import Proposal from "../components/proposals/proposal"
 import formaService from "./forma.service"
@@ -60,13 +60,19 @@ class FormaSaveService {
     projectId,
     proposal,
     elementResponseMap,
-    terrainElevationTransf3d
+    terrainElevationTransf3d,
+    loadedIntegrateElements
   }: {
     projectId: string
     proposal: Proposal
     elementResponseMap: ElementResponse,
-    terrainElevationTransf3d: any
+    terrainElevationTransf3d: any,
+    loadedIntegrateElements: string[]
   }, callback: any) {  
+    const hasSomethingToSave = await FormIt.Model.IsModified();
+    if(!hasSomethingToSave)
+      return;
+      
     this.beforeSaveLayerHandling()
       .then(async() => {
         hideLayersBeforeSave()
@@ -75,7 +81,7 @@ class FormaSaveService {
             // The code assumes that levels are only applied to instances at this
             // point. If that is incorrect, we'll need to move the levels from bodies
             // and meshes unto their containing instance.
-            getFormitGeometry(previousLayersVisibility, 
+            getFormItGeometry(previousLayersVisibility, 
               typesAndConsts.formItLayerNames.FORMA_BUILDINGS, 
               (formitGeometry, polygonData) => {
                 if(!polygonData)
@@ -91,6 +97,7 @@ class FormaSaveService {
                   polygonData,
                   objectId,
                   elementResponseMap,
+                  loadedIntegrateElements,
                   callback
                 );
               }
@@ -207,6 +214,8 @@ class FormaSaveService {
       [proposalElement.urn]: proposalElement
     }
 
+    let loadedIntegrateElements = [];
+
     let elements: Record<Urn, BaseElement> = {
       [proposalElement.urn]: proposalElement
     }
@@ -251,12 +260,12 @@ class FormaSaveService {
     let layersCreated = await createCategoryLayers()
     if(layersCreated)
     {
-      let promises = downloadAllChild(proposalElement, proposal.projectId, elementResponseMap);
+      let promises = downloadAllChild(proposalElement, proposal.projectId, elementResponseMap, loadedIntegrateElements);
       await Promise.all(promises)
             .then(async () => {
-                getUrlAndLoad(elementResponseMap, proposalElement, proposal.proposalId, "", proposalCategorizedPaths, hiddenLayers)
+                getUrlAndLoad(elementResponseMap, proposalElement, proposal, "", proposalCategorizedPaths, hiddenLayers)
                 .then(() => {
-                  callback(proposal.proposalId);
+                  callback(proposal.proposalId, elementResponseMap, loadedIntegrateElements);
                 });
             });
     }

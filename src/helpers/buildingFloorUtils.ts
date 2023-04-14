@@ -2,7 +2,7 @@
 import { groupBy } from "lodash-es"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 
-import { formItLayerNames, MAIN_HISTORY_ID, SelectionObject, SelectionObjectID, FormitGeometry } from "./typesAndConstants"
+import { formItLayerNames, MAIN_HISTORY_ID, SelectionObject, SelectionObjectID, FormItGeometry } from "./typesAndConstants"
 import { createLayer } from "./layerUtils"
 
 export async function getFloorGeometriesByBuildingId() {
@@ -23,7 +23,7 @@ export async function getFloorGeometriesByBuildingId() {
         .map((selectionObject) => selectionObject.ids[1])
     })
   
-    const floorGeometriesByBuildingId: Record<string, typesAndConsts.FormitGeometry[]> = {}
+    const floorGeometriesByBuildingId: Record<string, typesAndConsts.FormItGeometry[]> = {}
   
     for (const [buildingId, floorObjects] of Object.entries(floorsByBuildingId)) {
       const buildingTransform = WSM.APIGetInstanceTransf3dReadOnly(

@@ -1,6 +1,6 @@
 import { Child, ElementResponse, BaseElement, Urn } from "@spacemakerai/element-types"
 import { formitGeometryToIntegrateAPIPayload } from "../helpers/loadGeometryFromFormit"
-import { parseUrn } from "../helpers/elementUtils"
+import { parseUrn, removeElementFromMap } from "../helpers/elementUtils"
 import { getUrnFromPath } from "../helpers/loadUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import * as uuid from "uuid"
@@ -8,8 +8,9 @@ import FormaService from "../services/forma.service"
 import { isEmpty } from "lodash-es"
 import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
 import Proposal from "../components/proposals/proposal"
+import { setGlobalState } from "../helpers/stateUtils"
 
-export async function getFormitGeometry(previousLayersVisibility, names, callback) {
+export async function getFormItGeometry(previousLayersVisibility, names, callback) {
     FormIt.Layers.SetLayerVisibility(names, false)
       .then(() => {
         WSM.Utils.GetAllGeometryInformation(typesAndConsts.MAIN_HISTORY_ID)
@@ -309,9 +310,6 @@ export async function generatePayload(
   // Removing empty conceptual element
   if (formitGeometry.length === 0 && isEmpty(floorGeometriesByBuildingId)) {
     let editingElementUrn = "";
-    // if(editingElementPath) {
-    //   editingElementUrn = getUrnFromPath(editingElementPath, elementResponseMap);
-    // }
 
     await updateProposalElement({
       elementId: proposalId,
@@ -360,6 +358,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
   polygonData?: any,
   objectId?: number,
   elementResponseMap?: ElementResponse,
+  loadedIntegrateElements?: string[],
   callback?: any) {
     let proposalId = proposal.proposalId;
     let proposalUrn = proposal.urn;
@@ -398,7 +397,13 @@ export async function createIntegrateAPIElementAndUpdateProposal(
               if(currentProposal) {
                 const integrateElements = Object.values(currentProposal.children).filter(
                   (element: BaseElement) => {
-                    return element.urn.indexOf(":integrate:") > 0;
+                    let isIntegrate = element.urn.indexOf(":integrate:") > 0;
+                    let loadedFromContext = false;
+                    if(loadedIntegrateElements)
+                    {
+                      loadedIntegrateElements?.indexOf(element.urn) > -1;
+                    }
+                    return !loadedFromContext && isIntegrate;
                   }
                 )
 
@@ -425,7 +430,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
                   if(elementAlreadyExisted) {
                     idsInPayload = idsInPayload.filter((id) => { id !== editingElementId });
                     await storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm,
-                      polygonData, urns, proposalElement, callback);
+                      polygonData, urns, proposalElement, elementResponseMap, callback);
                   }
                   else {
                     editingElementId = "";
@@ -435,7 +440,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
 
                     // this is an existing element that has been deleted. Should be deleted
                     atLeastOneDeleted = await storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm,
-                      polygonData, urns, proposalElement, callback);
+                      polygonData, urns, proposalElement, elementResponseMap, callback);
                   }
                 }
 
@@ -452,7 +457,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
                   let urns = { editingElementUrn: null, deletingElementUrn: null }
                   // new items must be created
                   await storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm,
-                    polygonData, urns, proposalElement, callback);
+                    polygonData, urns, proposalElement, elementResponseMap, callback);
                 }
               }
               else {
@@ -461,7 +466,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
 
                 // this is first time saving, save all elements
                 await storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm,
-                  polygonData, urns, proposalElement, callback);
+                  polygonData, urns, proposalElement, elementResponseMap, callback);
               }
             }
 
@@ -469,7 +474,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
     });
   }
 
-async function storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm, polygonData, urns, proposalElement, callback) {
+async function storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm, polygonData, urns, proposalElement, elementResponseMap, callback) {
     let projectId = ids.projectId;
     let editingElementId = ids.editingElementId;
     let proposalId = ids.proposalId;
@@ -489,14 +494,14 @@ async function storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm, polygo
             return;
           }
           await createElementAndUpdateProposal(projectId, integrateAPIPayload, spacemakerObjectStorageReferenceId,
-            editingElementId, polygonData, proposalId, editingElementUrn, proposalElement, callback);
+            editingElementId, polygonData, proposalId, editingElementUrn, proposalElement, elementResponseMap, callback);
       });
     }
     else {
       return await updateProposalElement({
         elementId: proposalId,
         authContext: projectId,
-        elementResponseMap: null,
+        elementResponseMap: elementResponseMap,
         urnToDelete: deletingUrn,
         proposalElement: proposalElement
       });
@@ -504,7 +509,7 @@ async function storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm, polygo
   }
 
 async function createElementAndUpdateProposal(projectId, integrateAPIPayload, spacemakerObjectStorageReferenceId,
-  editingElementId, polygonData, proposalId, editingElementUrn, proposalElement, callback) {
+  editingElementId, polygonData, proposalId, editingElementUrn, proposalElement, elementResponseMap, callback) {
   createOrUpdateElement(
     projectId,
     integrateAPIPayload,
@@ -512,24 +517,31 @@ async function createElementAndUpdateProposal(projectId, integrateAPIPayload, sp
     editingElementId,
     polygonData
   )
-  .then(async (createdOrUpdatedElement) => {
-    if (createdOrUpdatedElement) {
+  .then(async (createdOrUpdatedElementResult) => {
+    if(!createdOrUpdatedElementResult || (typeof createdOrUpdatedElementResult === 'string' || createdOrUpdatedElementResult instanceof String))
+    {
+      if(callback)
+      {
+        callback(createdOrUpdatedElementResult);
+      }
+    }
+    else if (createdOrUpdatedElementResult) {
       updateProposalElement({
         elementId: proposalId,
         authContext: projectId,
-        elementResponseMap: null,
-        createdUrn: createdOrUpdatedElement.urn,
+        elementResponseMap: elementResponseMap,
+        createdUrn: createdOrUpdatedElementResult.urn,
         urnToUpdate: editingElementUrn,
         editingElementPath: "",
         proposalElement: proposalElement
       })
-      .then((success) => {
+      .then((result) => {
         if(callback)
         {
-          callback(success);
+          callback(result);
         }
       })
-    }
+    } 
     else
     {
       if(callback)
@@ -568,12 +580,23 @@ export async function createOrUpdateElement(
           const url = editingElementId
             ? `/api/integrate/elements/${editingElementId}?version=2&authcontext=${projectId}&s3Id=${uploadLinkData.id}`
             : `/api/integrate/elements?version=2&authcontext=${projectId}&s3Id=${uploadLinkData.id}`
-          const res = await fetch(url, {
+          let res = await fetch(url, {
             method: "POST",
           })
+          .catch((error) => {
+            console.log(error)
+            throw new Error(error);
+          });
   
           if (res.ok) {
             return await res.json()
+          }
+          else
+          {
+            let error = await res.json();
+            let errorMessage = `${error.errorMessage}: ${error.errors ? error.errors[0].message : "no detail can be found"}`;
+            console.log(errorMessage)
+            return errorMessage
           }
         }
       } catch (error) {
@@ -605,6 +628,11 @@ export async function updateProposalElement({
   }) {
     if(proposalElement === null) {
       proposalElement = await retrieveProposalElements(authContext, elementId);
+    }
+    else
+    {
+      // clear previously stored proposal element, which is now obsolete due to new revision
+      elementResponseMap = removeElementFromMap(elementResponseMap, proposalElement.urn);
     }
 
     const { revision } = parseUrn(proposalElement.urn)
@@ -647,6 +675,7 @@ export async function updateProposalElement({
         proposalElement.children[childIndex].transform = undefined
       }
     } else if (urnToDelete) {
+      elementResponseMap = removeElementFromMap(elementResponseMap, urnToDelete);
       proposalElement.children = proposalElement.children.filter((element: Child) => {
         return element.urn !== urnToDelete
       })
@@ -660,17 +689,36 @@ export async function updateProposalElement({
       return false
     }
   
-
     try {
       const res = await fetch(
         `/api/proposal/elements/${elementId}/revisions/${revision}?version=2&authcontext=${authContext}`,
         {
           method: "PUT",
           body: JSON.stringify(proposalElement),
-        },
+        }
       )
-  
-      return res.ok
+      if(res.ok)
+      {        
+        Object.values(proposalElement!.children).filter(
+          (element) => element.urn.indexOf("integrate") > -1
+        ).forEach(
+          (integrate) => {
+            if(!elementResponseMap[integrate.urn])
+            {
+              elementResponseMap[integrate.urn] = integrate;
+            }
+          }
+        );
+
+        // update proposal in elementResponseMap after successfully created new revision
+        retrieveProposalElements(authContext, elementId)
+          .then((proposalElement) => {
+            elementResponseMap[proposalElement.urn] = proposalElement
+          });
+        setGlobalState("elements", elementResponseMap);
+        return true;
+      }
+      return false;
     } catch (error) {
       return false;
     }

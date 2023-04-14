@@ -1,5 +1,5 @@
 import { ReferenceType, Transform } from "@spacemakerai/element-types-classic"
-import { FormitMesh, FormitGeometry } from "../helpers/typesAndConstants"
+import { FormItMesh, FormItGeometry } from "../helpers/typesAndConstants"
 import * as uuid from "uuid"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 
@@ -24,7 +24,7 @@ const transpose = (transform: Transform) => {
   ]
 }
 
-const optimizeMesh = (mesh: FormitMesh): FormitMesh => {
+const optimizeMesh = (mesh: FormItMesh): FormItMesh => {
   const opt: { [x: number]: { [y: number]: { [z: number]: number } } } = {}
   const newIndices = []
   const newVertices = []
@@ -42,7 +42,7 @@ const optimizeMesh = (mesh: FormitMesh): FormitMesh => {
   return { ...mesh, indices: newIndices, vertices: newVertices }
 }
 
-const mergeMeshes = (meshes: FormitMesh[]): FormitMesh => {
+const mergeMeshes = (meshes: FormItMesh[]): FormItMesh => {
   let indices: number[] = []
   let vertices: number[] = []
   // TODO: optimize by merging vertices
@@ -56,8 +56,8 @@ const mergeMeshes = (meshes: FormitMesh[]): FormitMesh => {
 
 export const formitGeometryToIntegrateAPIPayload = async (
   offsetTransf3d: any,
-  formitGeometry: FormitGeometry[],
-  floorGeometriesByBuildingId: Record<string, typesAndConsts.FormitGeometry[]>
+  formitGeometry: FormItGeometry[],
+  floorGeometriesByBuildingId: Record<string, typesAndConsts.FormItGeometry[]>
 ) => {
   const rootElement = {
     id: uuid.v4(),
@@ -82,16 +82,20 @@ export const formitGeometryToIntegrateAPIPayload = async (
     await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
   }
 
+  
+  debugger
   return payload
 }
 
 async function buildElementsFromGeometry(
-  formitGeometry: FormitGeometry[],
+  formitGeometry: FormItGeometry[],
   elements: Record<string, any>,
   rootElement: any,
   offsetTransf3d: any,
   isBuildingFloor = false,
 ) {
+  debugger
+
   const feetToMeters = 0.3047999995367042
   const point = await WSM.Geom.Point3d(0, 0, 0)
   const vector = await WSM.Geom.Vector3d(feetToMeters, feetToMeters, feetToMeters)
@@ -133,7 +137,7 @@ async function buildElementsFromGeometry(
               transf3d = multiplyResult
               rootElement.children.push({
                 id: element.id,
-                transform: transpose(transf3d.data),
+                transform: transpose(transf3d.data)
               })
             });
         }

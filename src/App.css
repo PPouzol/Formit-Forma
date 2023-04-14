@@ -36,11 +36,11 @@ label {
   overflow-y: auto;
 }
 
-.proposal-hidden {
+.hidden {
   display: none;
 }
 
-.proposal-visible {
+.visible {
   display: block;
 }
 
@@ -54,5 +54,5 @@ label {
 
 .disabled {
   pointer-events: none;
-  opacity: 0.4;
+  opacity: 0.2;
 }

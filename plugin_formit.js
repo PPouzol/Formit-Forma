@@ -1,11 +1,11 @@
 const MAIN_HISTORY_ID = 0;
 
-FormitPlugin = {};
+FormItPlugin = {};
 
-FormitPlugin.PluginLocation = "PLUGINLOCATION";
-FormitPlugin.ShowDialog = function(){
+FormItPlugin.PluginLocation = "PLUGINLOCATION";
+FormItPlugin.ShowDialog = function(){
     var dialogParams = {
-        "PluginName": "Formit<>Forma",
+        "PluginName": "FormIt-Forma",
         "DialogBox": "PLUGINLOCATION/login.html",
         "DialogBoxType": "Modeless",
         "Settings": {
