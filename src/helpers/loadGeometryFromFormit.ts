@@ -82,8 +82,6 @@ export const formitGeometryToIntegrateAPIPayload = async (
     await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
   }
 
-  
-  debugger
   return payload
 }
 
@@ -94,8 +92,6 @@ async function buildElementsFromGeometry(
   offsetTransf3d: any,
   isBuildingFloor = false,
 ) {
-  debugger
-
   const feetToMeters = 0.3047999995367042
   const point = await WSM.Geom.Point3d(0, 0, 0)
   const vector = await WSM.Geom.Vector3d(feetToMeters, feetToMeters, feetToMeters)
@@ -132,25 +128,11 @@ async function buildElementsFromGeometry(
 
         if (offsetTransf3d && offsetTransf3d.data) {
           //@ts-ignore
-          await WSM.Transf3d.Multiply(offsetTransf3d, transf3d)
-            .then((multiplyResult) => {
-              transf3d = multiplyResult
-              rootElement.children.push({
-                id: element.id,
-                transform: transpose(transf3d.data)
-              })
-            });
+          transf3d = await WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
         }
 
         //@ts-ignore
-        await WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d)
-          .then((multiplyResult) => {
-            transf3d = multiplyResult
-            rootElement.children.push({
-              id: element.id,
-              transform: transpose(transf3d.data),
-            })
-          });
+        transf3d = await WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d);
 
         rootElement.children.push({
           id: element.id,
@@ -166,29 +148,20 @@ async function buildElementsFromGeometry(
 
       if (offsetTransf3d && offsetTransf3d.data) {
         //@ts-ignore
-        await WSM.Transf3d.Multiply(offsetTransf3d, transf3d)
-          .then((multiplyResult) => {
-            transf3d = multiplyResult
-            rootElement.children.push({
-              id: element.id,
-              transform: transpose(transf3d.data),
-            })
-          });
+        transf3d = await WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
       }
 
       //@ts-ignore
-      await WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d)
-        .then((multiplyResult) => {
-          transf3d = multiplyResult
-          rootElement.children.push({
-            id: element.id,
-            transform: transpose(transf3d.data),
-          })
-        });
+      transf3d = await WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d);
 
       elements[element.id] = {
         ...element,
       }
+
+      rootElement.children.push({
+        id: element.id,
+        transform: transpose(transf3d.data),
+      })
     }
   }
 }

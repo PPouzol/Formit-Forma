@@ -401,7 +401,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
                     let loadedFromContext = false;
                     if(loadedIntegrateElements)
                     {
-                      loadedIntegrateElements?.indexOf(element.urn) > -1;
+                      loadedFromContext = loadedIntegrateElements?.indexOf(element.urn) > -1;
                     }
                     return !loadedFromContext && isIntegrate;
                   }

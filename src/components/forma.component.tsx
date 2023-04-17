@@ -310,7 +310,6 @@ function FormItForma() {
         loadedIntegrateElements
       }, 
       (result) => {
-        debugger
         setSync(true);
         if(result && (typeof result === 'string' || result instanceof String))
         {
@@ -358,12 +357,6 @@ function FormItForma() {
     }  
   }, [])
   
-  // get workspaces from API
-  useEffect(() => {
-    debugger
-    
-  }, [statusType])
-
   // get workspaces from API
   useEffect(() => {
     handleFetchValues(FormaService.getWorkspaces(), 

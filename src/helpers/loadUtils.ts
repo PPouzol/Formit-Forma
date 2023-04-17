@@ -552,7 +552,6 @@ async function loadGltf({
   )
 
   if (instanceIDs.length !== 1) {
-    debugger
     console.error("Created instanceIds should be 1")
     return
   }
