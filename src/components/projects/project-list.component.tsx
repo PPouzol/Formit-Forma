@@ -1,6 +1,4 @@
 import * as ProjectS from "./project-style"
-import FormaService from "../../services/forma.service"
-import fetchResultObj from "../../common/interfaces";
 import ProjectComponent from "./project.component"
 import Project from "./project"
 
@@ -33,10 +31,10 @@ function ProjectList(props: Props) {
       element.classList.remove('selected');
     });
 
-    const allProposalsElements = document.querySelectorAll('.proposal-visible');
+    const allProposalsElements = document.querySelectorAll('.visible');
     allProposalsElements.forEach((proposal) => {
-      proposal.classList.remove('proposal-visible');
-      proposal.classList.add('proposal-hidden');
+      proposal.classList.remove('visible');
+      proposal.classList.add('hidden');
     });
 
     // change selected proposal

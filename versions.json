@@ -1,9 +1,9 @@
 [
     {
         "version":{
-            "major":0,
-            "minor":1
+            "major":24,
+            "minor":0  
         },
-        "path":"v0_1"
+        "path":"v24_0"
     }
 ]

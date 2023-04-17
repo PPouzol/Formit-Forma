@@ -1,8 +1,7 @@
 import { ReferenceType, Transform } from "@spacemakerai/element-types-classic"
-import { FormitMesh, FormitGeometry } from "../helpers/typesAndConstants"
+import { FormItMesh, FormItGeometry } from "../helpers/typesAndConstants"
 import * as uuid from "uuid"
-import { MAIN_HISTORY_ID, formItLayerNames } from "./typesAndConstants"
-import { createLayer } from "./layerUtils"
+import * as typesAndConsts from "../helpers/typesAndConstants"
 
 const transpose = (transform: Transform) => {
   return [
@@ -25,7 +24,7 @@ const transpose = (transform: Transform) => {
   ]
 }
 
-const optimizeMesh = (mesh: FormitMesh): FormitMesh => {
+const optimizeMesh = (mesh: FormItMesh): FormItMesh => {
   const opt: { [x: number]: { [y: number]: { [z: number]: number } } } = {}
   const newIndices = []
   const newVertices = []
@@ -43,7 +42,7 @@ const optimizeMesh = (mesh: FormitMesh): FormitMesh => {
   return { ...mesh, indices: newIndices, vertices: newVertices }
 }
 
-const mergeMeshes = (meshes: FormitMesh[]): FormitMesh => {
+const mergeMeshes = (meshes: FormItMesh[]): FormItMesh => {
   let indices: number[] = []
   let vertices: number[] = []
   // TODO: optimize by merging vertices
@@ -56,7 +55,9 @@ const mergeMeshes = (meshes: FormitMesh[]): FormitMesh => {
 }
 
 export const formitGeometryToIntegrateAPIPayload = async (
-  formitGeometry: FormitGeometry[]
+  offsetTransf3d: any,
+  formitGeometry: FormItGeometry[],
+  floorGeometriesByBuildingId: Record<string, typesAndConsts.FormItGeometry[]>
 ) => {
   const rootElement = {
     id: uuid.v4(),
@@ -75,53 +76,17 @@ export const formitGeometryToIntegrateAPIPayload = async (
     elements
   }
 
-  let transf3d = await WSM.Geom.Transf3d()
-  for (const geometry of formitGeometry) {
-    const mesh = optimizeMesh(mergeMeshes(geometry.meshes))
-    const element: Record<string, any> = {
-      id: uuid.v4(),
-      children: [],
-      properties: {
-        category: "ConceptualElement",
-        geometry: {
-          type: ReferenceType.INLINE,
-          format: "Mesh",
-          verts: mesh.vertices,
-          faces: mesh.indices,
-        }
-      }
-    }
+  await buildElementsFromGeometry(formitGeometry, elements, rootElement, offsetTransf3d)
 
-    if (geometry.transforms[0].data) {
-      transf3d.data = geometry.transforms[0].data as Transform
-    }
-    
-    elements[element.id] = {
-      ...element,
-    }
-
-    rootElement.children.push({
-      id: element.id,
-      transform: transpose(transf3d.data),
-    })
+  for (const [, floorGeometries] of Object.entries(floorGeometriesByBuildingId)) {
+    await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
   }
-
-  //await buildElementsFromGeometry(formitGeometry, elements, rootElement, offsetTransf3d)
-
-  // for (const [, floorGeometries] of Object.entries(floorGeometriesByBuildingId)) {
-  //   await buildElementsFromGeometry(floorGeometries.flat(), elements, rootElement, offsetTransf3d, true)
-  // }
-
-  // createLayer(MAIN_HISTORY_ID, formItLayerNames.FORMA_BUILDINGS)
-  //   .then(async (buildingsLayer) => {
-  //     await FormIt.Layers.DeleteLayers([buildingsLayer.formItLayerId])
-  //   });
 
   return payload
 }
 
 async function buildElementsFromGeometry(
-  formitGeometry: FormitGeometry[],
+  formitGeometry: FormItGeometry[],
   elements: Record<string, any>,
   rootElement: any,
   offsetTransf3d: any,
@@ -163,21 +128,11 @@ async function buildElementsFromGeometry(
 
         if (offsetTransf3d && offsetTransf3d.data) {
           //@ts-ignore
-          await FormItInterface.CallMethod("FormitPlugin.Multiply", [offsetTransf3d, transf3d], (transf3d) => {
-            rootElement.children.push({
-              id: element.id,
-              transform: transpose(transf3d.data),
-            })
-          });
+          transf3d = await WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
         }
 
         //@ts-ignore
-        await FormItInterface.CallMethod("FormitPlugin.Multiply", [feetToMetersTransf3d, transf3d], (transf3d) => {
-          rootElement.children.push({
-            id: element.id,
-            transform: transpose(transf3d.data),
-          })
-        });
+        transf3d = await WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d);
 
         rootElement.children.push({
           id: element.id,
@@ -193,25 +148,20 @@ async function buildElementsFromGeometry(
 
       if (offsetTransf3d && offsetTransf3d.data) {
         //@ts-ignore
-        await FormItInterface.CallMethod("FormitPlugin.Multiply", [offsetTransf3d, transf3d], (transf3d) => {
-          rootElement.children.push({
-            id: element.id,
-            transform: transpose(transf3d.data),
-          })
-        });
+        transf3d = await WSM.Transf3d.Multiply(offsetTransf3d, transf3d);
       }
 
       //@ts-ignore
-      await FormItInterface.CallMethod("FormitPlugin.Multiply", [feetToMetersTransf3d, transf3d], (transf3d) => {
-        rootElement.children.push({
-          id: element.id,
-          transform: transpose(transf3d.data),
-        })
-      });
+      transf3d = await WSM.Transf3d.Multiply(feetToMetersTransf3d, transf3d);
 
       elements[element.id] = {
         ...element,
       }
+
+      rootElement.children.push({
+        id: element.id,
+        transform: transpose(transf3d.data),
+      })
     }
   }
 }

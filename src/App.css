@@ -36,11 +36,11 @@ label {
   overflow-y: auto;
 }
 
-.proposal-hidden {
+.hidden {
   display: none;
 }
 
-.proposal-visible {
+.visible {
   display: block;
 }
 
@@ -49,10 +49,10 @@ label {
 }
 
 .selected {
-  border: 1.5px solid rgb(98, 148, 249);
+  border: 1.5px solid rgb(139, 139, 142);
 }
 
 .disabled {
   pointer-events: none;
-  opacity: 0.4;
+  opacity: 0.2;
 }

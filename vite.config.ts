@@ -9,11 +9,10 @@ export default defineConfig({
   root: '.',
   base: './',
   build: {
-    outDir: './v0_1',
+    outDir: './build',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        admin: resolve(__dirname, 'login.html')
+        main: resolve(__dirname, 'index.html')
       }
     }
   },
@@ -22,8 +21,20 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
+          src: './build/assets/*',
+          dest: './deploy/v24_0/assets'
+        },
+        {
+          src: './build/index.html',
+          dest: './deploy/v24_0'
+        },
+        {
+          src: './build/login.html',
+          dest: './deploy/v24_0'
+        },
+        {
           src: './manifest.json',
-          dest: '.',
+          dest: './deploy/v24_0',
           rename: 'manifest.json',
         },
         {
@@ -31,12 +42,28 @@ export default defineConfig({
           dest: '.'
         },
         {
+          src: './src/assets',
+          dest: './deploy/v24_0'
+        },
+        {
           src: './plugin_formit.js',
-          dest: '.'
+          dest: './deploy/v24_0'
         },
         {
           src: './README.md',
+          dest: './deploy'
+        },
+        {
+          src: './src/addins/*',
+          dest: './deploy/v24_0'
+        },
+        {
+          src: './src/addins/*',
           dest: '.'
+        },
+        {
+          src: './versions.json',
+          dest: './deploy'
         }
       ]
     })
@@ -59,6 +86,14 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/app": {
+        target: "https://app.spacemaker.ai/",
+        changeOrigin: true,
+      },
+      "/texture": {
+        target: "https://app.spacemaker.ai/",
+        changeOrigin: true,
+      },
+      "/web-components": {
         target: "https://app.spacemaker.ai/",
         changeOrigin: true,
       }

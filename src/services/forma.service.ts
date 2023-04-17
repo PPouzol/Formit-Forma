@@ -1,3 +1,6 @@
+
+import { ElementResponse } from "@spacemakerai/element-types"
+
 const API_URL = 'https://local.spacemaker.ai:3001';
 const SPACEMAKER_URL = 'https://app.spacemaker.ai';
 
@@ -42,9 +45,86 @@ class FormaService {
       return res.json();
     });
   }
+  
+  getElement(
+    elementType: string,
+    elementId: string,
+    revision: string,
+    authContext: string,
+  ): Promise<ElementResponse | null> {
+    try {
+      const url = `/api/${elementType}/elements/${elementId}/revisions/${revision}?authcontext=${authContext}&version=2`;
+      return fetch(url)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        return res.json();
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  getProposalElement(
+    elementId: string,
+    authContext: string,
+  ): Promise<ElementResponse | null> {
+    try {
+      const url = `/api/proposal/elements/${elementId}?authcontext=${authContext}`;
+      return fetch(url)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        return res.json();
+      });
+    } catch (error) {
+      return null;
+    }
+  }
 
   FormatThumbnailUrl(projectId: string, urn: string) {
-    return `${SPACEMAKER_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
+    return `${API_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
+  }
+  
+  FormatConceptualWorkerUrl() {
+    return `${API_URL}/web-components/conceptual-design/conceptual-design-terrain-worker-initiator.mjs`
+  }
+
+  fetchRawDatas(url: string) {
+    if(url.indexOf('/') === 0)
+    {
+      url = `${API_URL}${url}`
+    }
+    return fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": "true",
+      },
+    });
+  }
+
+  getAsJson(url: string) {
+    if(url.indexOf('/') === 0)
+    {
+      url = `${API_URL}${url}`
+    }
+    return fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": "true",
+      },
+    })
+    .then(res => {
+      if (res.ok) {
+        var result = res.json()
+        return result;
+      }
+      return false
+    });
   }
 }
 

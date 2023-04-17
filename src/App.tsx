@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
 import './App.css'
 import Login from "./components/login.component";
-import FormitForma from "./components/forma.component";
+import FormItForma from "./components/forma.component";
 import formitFormaService from "./services/formit-forma.service";
 
 declare global {
-  let WSM: any;
-  let FormIt: any;
   let FormItInterface: any;
-  let FormitPlugin: any;
+  let FormItPlugin: any;
+  let FormIt: any;
+  let WSM: any;
+  // interface window {
+  //   FormIt: any,
+  //   FormItModule: any,
+  //   WSM: any,
+  //   FormItReceiveCoreMessage: (payload?: any) => void
+  // }
 }
 
 function compileFromCookie() {
@@ -29,7 +35,7 @@ function compileFromCookie() {
   }
   else
   {
-    node = <FormitForma />;
+    node = <FormItForma />;
   }
 
   return { loggedIn, node };
@@ -51,7 +57,7 @@ function App() {
   return (
       <div id="PluginWrapper">
         <div id='PluginContainer'>
-          <h1 className="title">Formit-Forma</h1>
+          <h1 className="title">FormIt-Forma</h1>
           <h3 className="title">Send data between FormIt and Forma</h3>
           <div id="AppControls">
             <div className="container mt-3">
@@ -66,10 +72,10 @@ function App() {
             </div>
             <div>
                 It looks like your web browser is in private or incognito mode. 
-                Formit-Forma plugin needs to save data to the local storage, so it can only be used in standard browsing mode.
+                FormIt-Forma plugin needs to save data to the local storage, so it can only be used in standard browsing mode.
                 <br/>
                 <br/>
-                To use Formit-Forma Plugin, please switch to standard browsing mode.
+                To use FormIt-Forma Plugin, please switch to standard browsing mode.
             </div>
           </div>
         </div>
