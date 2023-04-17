@@ -366,10 +366,10 @@ function FormItForma() {
 	return (
     <div id="FormaControls" className="col-md-12">
       <div id="working-container" className="hidden">
-        {/* <img id="working-screen"
-              src="assets/favicon.svg" 
-              width="115" height="115">
-        </img> */}
+        <img id="working-screen"
+            src="assets/favicon.svg" 
+            width="115" height="115">
+        </img>
         <label>Fetching from Forma...</label>
       </div>
       <div id="plugin-container" className="plugin">

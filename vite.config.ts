@@ -39,6 +39,10 @@ export default defineConfig({
         },
         {
           src: './src/assets',
+          dest: '.'
+        },
+        {
+          src: './src/assets',
           dest: './deploy/v24_0'
         },
         {

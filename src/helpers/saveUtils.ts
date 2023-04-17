@@ -531,8 +531,6 @@ async function createElementAndUpdateProposal(projectId, integrateAPIPayload, sp
         authContext: projectId,
         elementResponseMap: elementResponseMap,
         createdUrn: createdOrUpdatedElementResult.urn,
-        urnToUpdate: editingElementUrn,
-        editingElementPath: "",
         proposalElement: proposalElement
       })
       .then((result) => {
@@ -613,8 +611,6 @@ export async function updateProposalElement({
     elementResponseMap,
     createdUrn,
     urnToDelete,
-    urnToUpdate,
-    editingElementPath,
     proposalElement
   }: {
     elementId: string
@@ -622,8 +618,6 @@ export async function updateProposalElement({
     elementResponseMap?: ElementResponse
     createdUrn?: string
     urnToDelete?: string
-    urnToUpdate?: string
-    editingElementPath?: string
     proposalElement: BaseElement
   }) {
     if(proposalElement === null) {
@@ -637,44 +631,7 @@ export async function updateProposalElement({
 
     const { revision } = parseUrn(proposalElement.urn)
 
-    if (createdUrn && urnToUpdate) {
-      const elementToUpdateKey = editingElementPath.split("/").at(-1)
-      const isTopLevelElement = editingElementPath.split("/").length === 2
-      if (!isTopLevelElement) {
-        const parentPath = editingElementPath.split("/").slice(0, 2).join("/")
-        const parentUrn = getUrnFromPath(parentPath, elementResponseMap)
-        const isGroup = parseUrn(parentUrn).system === "group"
-  
-        if (isGroup) {
-          const groupElement = elementResponseMap[parentUrn as Urn]
-          const nextRevision = new Date().getTime()
-          const { id, revision } = parseUrn(parentUrn)
-  
-          const childIndex = groupElement.children.findIndex(
-            (element: Child) => element.urn === urnToUpdate && element.key === elementToUpdateKey,
-          )
-          groupElement.children[childIndex].urn = createdUrn as Urn
-          groupElement.children[childIndex].transform = undefined
-  
-          const url = `/api/group/elements/${id}/revisions/${revision}?&version=2&authcontext=${authContext}&parentUrn=${proposalElement.urn}&nextRevision=${nextRevision}`
-          const response = await fetch(url, { method: "PUT", body: JSON.stringify(groupElement) })
-          const newGroupElement: BaseElement = await response.json()
-  
-          const groupChildIndex = proposalElement.children.findIndex(
-            (element) => element.urn === parentUrn,
-          )
-          proposalElement.children[groupChildIndex].urn = newGroupElement.urn
-        }
-      } else {
-        const childIndex = proposalElement.children.findIndex((element: Child) => {
-          return element.urn === urnToUpdate && element.key === elementToUpdateKey
-        })
-        proposalElement.children[childIndex].urn = createdUrn as Urn
-  
-        //reset transform, since it's now baked into the axm and glb.
-        proposalElement.children[childIndex].transform = undefined
-      }
-    } else if (urnToDelete) {
+    if (urnToDelete) {
       elementResponseMap = removeElementFromMap(elementResponseMap, urnToDelete);
       proposalElement.children = proposalElement.children.filter((element: Child) => {
         return element.urn !== urnToDelete
