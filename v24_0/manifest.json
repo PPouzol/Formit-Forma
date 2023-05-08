@@ -3,7 +3,7 @@
     "PluginDescription": "Connection between FormIt and Forma environment. OpenStreetMap® data was used to generate some of the data in this plug-in. https://www.openstreetmap.org/copyright",
     "PluginType": "Panel",
     "Panel": "PLUGINLOCATION/index.html",
-    "PanelIcon": "PLUGINLOCATION/assets/sync.png",
+    "PanelIcon": "PLUGINLOCATION/assets/favicon.svg",
     "Platforms": ["Windows"],
     "Scripts": [ "PLUGINLOCATION/plugin_formit.js" ],
     "DLLs": [ "PLUGINLOCATION/FormItFormaAddIn.dll" ]
