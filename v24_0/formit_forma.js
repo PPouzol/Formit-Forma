@@ -25,11 +25,10 @@ FormIt.FormaAddIn.ImportAXMBlob = function(blob) {
     return callAsyncAPI(args);
 };
 
-FormIt.FormaAddIn.CreateTempPath = function(aPath, bDeleteExisting) {
+FormIt.FormaAddIn.CreateTempPath = function(aPath) {
     args = {
         TestAPI: "FormIt.FormaAddIn.CreateTempPath",
-        aPath: aPath,
-        deleteExisting: bDeleteExisting
+        aPath: aPath
     };
     
     return callAsyncAPI(args);
