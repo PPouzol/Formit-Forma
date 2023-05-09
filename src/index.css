@@ -45,12 +45,11 @@ h4 {
 
 #MainControls, #AppControls{
   text-align: left;
-  border-top: solid 1px lightsteelblue;
 }
 
 #FormaControls {
   text-align: center;
-  border-top: solid 1px lightsteelblue;
+  border-top: solid 1px lightgray;
 }
 
 #MainControls a{

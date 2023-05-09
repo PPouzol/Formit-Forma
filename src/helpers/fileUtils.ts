@@ -4,7 +4,7 @@ export async function deleteFile(fileLocation) {
     FormIt.FormaAddIn.DeleteTempFile(fileLocation);
   }
 
-export async function createFile(args, datas, clearExisting, callback) {
+export async function createFile(args, datas, clearExisting, callback, failureFallBack) {
     if(!datas)
     {
         await formaService.fetchRawDatas(args.fetchUrl)
@@ -14,11 +14,12 @@ export async function createFile(args, datas, clearExisting, callback) {
                 return parsedDatas;
             })
             .then(async (datas) => {
-                let finalPath = await FormIt.FormaAddIn.CreateTempPath(args.savePath);
+                let finalPath = await FormIt.FormaAddIn.CreateTempPath(args.savePath, true);
                 if(finalPath === "{}")
                 {
                     // an existing remaining file exists
-
+                    failureFallBack(false);
+                    return false;
                 }
                 if(clearExisting)
                 {
@@ -39,10 +40,12 @@ export async function createFile(args, datas, clearExisting, callback) {
     else
     {
         //save datas to file in args.savePath
-        let finalPath = await FormIt.FormaAddIn.CreateTempPath(args.savePath);
+        let finalPath = await FormIt.FormaAddIn.CreateTempPath(args.savePath, true);
         if(finalPath === "{}")
         {
-            return true;
+            // an existing remaining file exists
+            failureFallBack(false);
+            return false;
         }
         if(clearExisting)
         {

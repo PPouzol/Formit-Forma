@@ -15,7 +15,6 @@ import { isEmpty } from "lodash-es"
 import { v4 as uuid } from "uuid"
 import { createLayer } from "./layerUtils"
 
-
 export type InternalPath = string
 
 export const transpose = (src: Transform) => {
@@ -63,7 +62,7 @@ export function getPathToUrn(
     return idToUrns
   }
 
-export function getGlbUrlMapAndAxmList(
+export async function getGlbUrlMapAndAxmList(
     elementResponseMap: Record<string, any>,
     pathMap: Record<typesAndConsts.InternalPath, Urn>,
     editingElementPath: typesAndConsts.InternalPath
@@ -79,7 +78,7 @@ export function getGlbUrlMapAndAxmList(
       const referenceFormats = element.properties.spacemakerObjectStorageReferenceFormats
       const hasAxmReference: boolean = referenceFormats?.[0] === "axm"
       const { system } = parseUrn(element.urn)
-      const totalTransform = getTotalTransform(path, elementResponseMap, pathMap)
+      const totalTransform = await getTotalTransform(path, elementResponseMap, pathMap)
   
       if (system === "integrate" && hasAxmReference) {
         const elementWithParentTransform: typesAndConsts.AxmDetail = {
@@ -124,7 +123,7 @@ export function getGlbUrlMapAndAxmList(
     return { glbUrlMap, axmList }
   }
 
-function getTotalTransform(
+async function getTotalTransform(
     path: typesAndConsts.InternalPath,
     elementResponseMap: ElementResponse,
     pathMap: Record<typesAndConsts.InternalPath, Urn>,
@@ -134,16 +133,16 @@ function getTotalTransform(
     let pathIndex = 0
   
     let currentPath = pathParts[pathIndex]
-    totalTransform = getTransform(currentPath, pathIndex, 
+    totalTransform = await getTransform(currentPath, pathIndex, 
         pathMap, elementResponseMap, totalTransform,
         pathParts)
   
     return totalTransform
   }
 
-const getTransform = (currentPath: typesAndConsts.InternalPath, pathIndex: number, 
+async function getTransform (currentPath: typesAndConsts.InternalPath, pathIndex: number, 
     pathMap: Record<typesAndConsts.InternalPath, Urn>, elementResponseMap: ElementResponse, totalTransform: any,
-    pathParts: string[]) => {
+    pathParts: string[]) {
     const pathKeys = currentPath.split("/")
     const parentPath = pathKeys.length > 1 ? pathKeys.slice(0, pathIndex).join("/") : undefined
     const parentUrn = pathMap[parentPath]
@@ -155,16 +154,16 @@ const getTransform = (currentPath: typesAndConsts.InternalPath, pathIndex: numbe
     const element = elementResponseMap[urn]
     const elementTransform = element?.transform
 
-    totalTransform = multiplyTransforms(
+    totalTransform = await multiplyTransforms(
       totalTransform,
-      multiplyTransforms(parentTransform, elementTransform),
+      await multiplyTransforms(parentTransform, elementTransform),
     )
     pathIndex++
 
     const restPath = pathParts.slice(pathIndex)
     if (restPath.length > 0) {
       currentPath = pathParts.slice(0, pathIndex + 1).join("/")
-      getTransform(currentPath, pathIndex, 
+      await getTransform(currentPath, pathIndex, 
         pathMap, elementResponseMap, totalTransform,
         pathParts)
     }
@@ -173,18 +172,22 @@ const getTransform = (currentPath: typesAndConsts.InternalPath, pathIndex: numbe
   }
 
 // Function to multiple two transforms as arrays together. Uses window.WSM for this.
-const multiplyTransforms = (src1: Transform, src2: Transform) => {
+async function multiplyTransforms (src1: Transform, src2: Transform) {
     let dest = src1
     if (src2) {
       if (src1) {
-        let t1 = WSM.Geom.Transf3d()
+        let t1 = await WSM.Geom.Transf3d()
         t1.data = transpose(src1)
-        const t2 = WSM.Geom.Transf3d()
+        const t2 = await WSM.Geom.Transf3d()
         t2.data = transpose(src2)
   
         //@ts-ignore
-        WSM.Transf3d.Multiply(t1, t2)
+        await WSM.Transf3d.Multiply(t1, t2)
           .then((t1) => {
+            if(!t1)
+            {
+              return dest;
+            }
             dest = transpose(t1.data) as Transform
           });
       } else {
@@ -207,6 +210,7 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
  export async function loadTerrain(
     proposalId: string,
     terrainDetails: typesAndConsts.ElementDetails,
+    failureFallBack: any
   ): Promise<typesAndConsts.CreatedObjectDetails> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -217,42 +221,47 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
         )
     
         let parsedDatas = Array.from(terrainCacheData as Uint8Array);
-        await createFile(
-        {
-          savePath: tempTerrainWSMPath
-        },
-        parsedDatas,
-        true,
-        async (args) => {
-          let storedPath = args.tempGlbLocation;
-          const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+        let result = await createFile(
+          {
+            savePath: tempTerrainWSMPath
+          },
+          parsedDatas,
+          true,
+          async (args) => {
+            let storedPath = args.tempGlbLocation;
+            const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
 
-          //The actual load of cached terrain window.WSM
-          await FormIt.ImportFile(storedPath, false, WSM.INVALID_ID, false)
-    
-          const newDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
-          const data = await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
-            typesAndConsts.MAIN_HISTORY_ID,
-            previousDelta,
-            newDelta,
-            [WSM.nObjectType.nGroupType]
-          )
-    
-          const createdGroupIds = data.created
-          await deleteFile(storedPath);
+            //The actual load of cached terrain window.WSM
+            await FormIt.ImportFile(storedPath, false, WSM.INVALID_ID, false)
+      
+            const newDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
+            const data = await WSM.APIGetCreatedChangedAndDeletedInDeltaRangeReadOnly(
+              typesAndConsts.MAIN_HISTORY_ID,
+              previousDelta,
+              newDelta,
+              [WSM.nObjectType.nGroupType]
+            )
+      
+            const createdGroupIds = data.created
+                    
+            await deleteFile(storedPath);
 
-          //should only be 1 terrain group.
-          if (createdGroupIds.length === 1) {
-            resolve({
-              allIdsCreated: createdGroupIds,
-              isTerrain: true,
-              isAxm: false,
-            });
-          }
-          else {
-            throw new Error("Error reading terrain transform from cached window.WSM, did not get 1 created group");
-          }
-        });
+            //should only be 1 terrain group.
+            if (createdGroupIds.length === 1) {
+              resolve({
+                allIdsCreated: createdGroupIds,
+                isTerrain: true,
+                isAxm: false
+              });
+            }
+            else {
+              throw new Error("Error reading terrain transform from cached window.WSM, did not get 1 created group");
+            }
+          },
+          failureFallBack
+        );
+
+        return result;
       } catch (e) {
         let errorMessage = `Error loading terrain from cache - ${e}`;
         console.log(errorMessage)
@@ -292,15 +301,17 @@ export async function requestAndLoadGlb(
     elementsInGlb: Array<typesAndConsts.ElementDetailsWithLoadInfo>,
     fileId: string,
     proposalCategorizedPaths: Record<string, string[]>,
-    hiddenLayers: string[]
+    hiddenLayers: string[],
+    failureFallBack: any
   ) {
     const fileLocation = `${fileId}.glb`
     const isTerrain: boolean = glbUrl.includes("/terrain/")
-    const needElevationFix: boolean = !glbUrl.includes("/parametric/")
   
     return new Promise(async (resolve, reject) => {
+      // console.log(`fetch glb ${glbUrl}`);
+
       try {
-        await createFile(
+        let result = await createFile(
           {
             fetchUrl: glbUrl,
             savePath: fileLocation
@@ -309,6 +320,7 @@ export async function requestAndLoadGlb(
           true, 
           async (args) => 
           {            
+            // console.log(`saved glb ${glbUrl}`);
             let finalLocation: string = args.tempGlbLocation;
             //if any of the elementsInGlb are being edited, filter them and then
             //load them separately so we can get their objectId when created as
@@ -357,11 +369,11 @@ export async function requestAndLoadGlb(
                   typesAndConsts.MAIN_HISTORY_ID,
                   createdInstanceId
                 ])
-              }
     
-              const layerVisibility = !hiddenLayers.includes(category)
-              FormIt.Layers.SetLayerVisibility(category, layerVisibility)
-              FormIt.Layers.SetLayerPickable(category, false)
+                const layerVisibility = !hiddenLayers.includes(category)
+                FormIt.Layers.SetLayerVisibility(category, layerVisibility)
+                FormIt.Layers.SetLayerPickable(category, false)
+              }
     
               allInstanceIds = [...allInstanceIds, createdInstanceId]
             }
@@ -378,23 +390,33 @@ export async function requestAndLoadGlb(
                 typesAndConsts.MAIN_HISTORY_ID,
                 createdInstanceId,
               )
-              const meshIds = WSM.APIGetAllObjectsByTypeReadOnly(nRefHistID, WSM.nMeshType)
-              const SIN_60_DEG = Math.sqrt(3) / 2
-              WSM.APIConvertMeshesToObjects(nRefHistID, meshIds, SIN_60_DEG)
-    
+              
+              // Only do the conversion to bodies if there are fewer triangles than the limit.
+              const modelStatistics: any = FormIt.Utils.ModelStatisticsSummary(nRefHistID)
+              if (modelStatistics.uniqueTriangles <= typesAndConsts.TRIANGLE_LIMIT_MESH_TO_BODY) {
+                const meshIds = WSM.APIGetAllObjectsByTypeReadOnly(nRefHistID, WSM.nMeshType)
+                const SIN_60_DEG = Math.sqrt(3) / 2
+                const bFlatten = modelStatistics.uniqueTriangles <= typesAndConsts.TRIANGLE_LIMIT_FLATTEN
+                WSM.APIConvertMeshesToObjects(nRefHistID, meshIds, SIN_60_DEG, bFlatten)
+              }
+      
               idEditingForConversion = createdInstanceId
               allInstanceIds = [...allInstanceIds, createdInstanceId]
             }
     
-            deleteFile(finalLocation);
-    
+            //deleteFile(finalLocation);
+                
             resolve({
               allIdsCreated: allInstanceIds,
               idEditingForConversion,
               isTerrain,
-              needElevationFix: needElevationFix
+              needElevationFix: true
             })
-          })
+          },
+          failureFallBack
+        );
+
+        return result;
       } catch (e) {
         reject(`Failed to request and load file into memory for url - ${glbUrl} - error: ${e}`)
       }
@@ -407,15 +429,15 @@ export async function requestAndLoadGlb(
     isEditing: boolean,
     proposalCategorizedPaths: Record<string, string[]>,
     hiddenLayers: string[],
+    failureFallBack: any
   ): Promise<typesAndConsts.CreatedObjectDetails> {
-
     return new Promise(async (resolve, reject) => {
+      // console.log(`fetch axm ${elementData?.properties?.spacemakerObjectStorageReferences[0]}`);
+
       let axmUrl = `/api/spacemaker-object-storage/v1/${elementData?.properties?.spacemakerObjectStorageReferences[0]}`;
       try {
         const fileLocation = `${uuid()}.axm`;
-        const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID);
-
-        await createFile(
+        let result = await createFile(
           {
             fetchUrl: axmUrl,
             savePath: fileLocation
@@ -424,9 +446,13 @@ export async function requestAndLoadGlb(
           true, 
           async (args) => 
           {
+            // console.log(`saved axm ${elementData?.properties?.spacemakerObjectStorageReferences[0]}`);
+            const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID);
+            // console.log(`axm - previous delta ${previousDelta}`);
+
             let storedPath = args.tempGlbLocation;
             await FormIt.ImportFile(storedPath, false, typesAndConsts.MAIN_HISTORY_ID, false)
-            await deleteFile(storedPath);
+            deleteFile(storedPath);
 
             await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
             .then(async(newDelta) => {
@@ -437,6 +463,9 @@ export async function requestAndLoadGlb(
                 [WSM.nObjectType.nInstanceType]
               )
               .then(async (data) => {
+                // console.log(`axm - deltas: ${previousDelta} - ${newDelta}`)
+                // console.log(`axm - created ids: ${data.created}`)
+
                 if (data.created.length > 0) {
                   if (elementData.parentTransform) {
                     elementData.parentTransform[12] *= typesAndConsts.METERS_TO_FEET
@@ -470,13 +499,23 @@ export async function requestAndLoadGlb(
                       await FormIt.Layers.SetLayerPickable(formItLayerId, false)
                     }
                   }
+
+                  //deleteFile(finalLocation);
+                  const bbox = await WSM.APIGetBoxReadOnly(typesAndConsts.MAIN_HISTORY_ID, data.created[0])
+                  // Set the terrain 1 feet above ground
+                  const dMinElevation = bbox.lower.z - 1.0
+                  //console.log(`AXM elevation: ${dMinElevation}`)
                 }
               })
             })
+
             //TODO need to return whole list of ids, if we expect to manipulate after.
-            resolve({ allIdsCreated: undefined, isAxm: true, needElevationFix: true } as typesAndConsts.CreatedObjectDetails)
-          }
+            resolve({ allIdsCreated: undefined, isAxm: true, needElevationFix: false } as typesAndConsts.CreatedObjectDetails)
+          },
+          failureFallBack
         )
+
+        return result;
       } catch (e) {
         reject(`Failed to request and load file into memory for url - ${axmUrl} - error: ${e}`)
       }
@@ -521,6 +560,8 @@ async function loadGltf({
 
   const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID)
 
+  //console.log(`gltf - previous delta ${previousDelta}`);
+
   await WSM.Gltf.APILoadGltfFile(
     typesAndConsts.MAIN_HISTORY_ID,
     fileLocation,
@@ -542,6 +583,9 @@ async function loadGltf({
   )
 
   const createIds = data.created
+
+  //console.log(`gltf - deltas: ${previousDelta} - ${newDelta}`)
+  //console.log(`gltf - created ids: ${data.created}`)
 
   const createdGroupID = await WSM.Utils.CreateAlignedAndCenteredGroup(typesAndConsts.MAIN_HISTORY_ID, createIds)
 

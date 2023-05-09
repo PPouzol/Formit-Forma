@@ -276,6 +276,13 @@ function FormItForma() {
     
     FormIt.NewFile(true);
 
+    let hasSomethingToSave = await FormIt.Model.IsModified();
+    if(hasSomethingToSave)
+    {
+      // group existing content
+      groupExistingToLayer();
+    }
+    
     useLoadConceptualWebWorker(proposal.projectId, proposal.proposalId);
 
     FormItFormaService.fetchAndLoadElements(
@@ -289,8 +296,30 @@ function FormItForma() {
 
         setGlobalState("elements", elementResponseMap);
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
+
+        // display open streetmap attribution
+        let message = `Map data from OpenStreetMap® 2023-03-09T13:48:28.962000Z.
+                        https://www.openstreetmap.org/copyright`;
+        FormIt.UI.ShowNotification(message, FormIt.NotificationType.Information, 5000);
+        
+        FormIt.View.FitToSelection();
       }
     );
+  }
+
+  function groupExistingToLayer() {
+    // const category = getCategoryFromElementPath(
+    //   elementsToLoadAsContext[0].fullIdPath,
+    //   proposalCategorizedPaths
+    // )
+
+    // if (category) {
+    //   const categoryLayer = await createOrGetOutOfContextLayer(category)
+    //   await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, [
+    //     typesAndConsts.MAIN_HISTORY_ID,
+    //     createdInstanceId
+    //   ])
+    // }
   }
 
   function onSyncClick() {
@@ -307,7 +336,9 @@ function FormItForma() {
         proposal,
         elementResponseMap,
         terrainElevationTransf3d,
-        loadedIntegrateElements
+        loadedIntegrateElements,
+        mapHistoryIdToInitialDeltaId,
+        axmPathsToDeleteSet
       }, 
       (result) => {
         setSync(true);
@@ -322,6 +353,8 @@ function FormItForma() {
           setMessage(result ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
         }
         container.classList.remove('disabled');
+        
+        FormIt.Selection.ClearSelections();
       }
     );
   }
@@ -341,6 +374,8 @@ function FormItForma() {
   const [elementResponseMap] = useGlobalState("elements");
   const [loadedIntegrateElements] = useGlobalState("loadedIntegrate");
   const [terrainElevationTransf3d] = useGlobalState("terrainElevationTransf3d");
+  const [mapHistoryIdToInitialDeltaId] = useGlobalState("mapHistoryIdToInitialDeltaId")
+  const [axmPathsToDeleteSet] = useGlobalState("axmPathsToDeleteSet")
   
   useEffect(() => {
     // on start, disable the button. 
@@ -378,7 +413,7 @@ function FormItForma() {
               className="fetchSelect" 
               onChange={handleWorkspaceSelectChange.bind(this)}
               defaultValue={""}
-              hidden
+              // hidden
             >
               { 
                 workspaces?.map(({ id, name }) => (

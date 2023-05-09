@@ -6,6 +6,20 @@ import {
   BaseElement
 } from "@spacemakerai/element-types"
 
+// If there are more than 50k triangles, do not
+// automatically convert meshes to triangles when
+// editing.
+export const TRIANGLE_LIMIT_MESH_TO_BODY = 50000
+export const TRIANGLE_LIMIT_FLATTEN = 10000
+export const FORMA_ELEMENT_PATH_KEY = "FormaElementPath"
+
+export enum ElementCategory {
+  Generic = "generic",
+  Building = "building",
+  Mixed = "",
+  JoinInOneBuilding = "join_in_one_building",
+}
+
 export const categories = [
   "site_limit",
   "building",
@@ -113,6 +127,11 @@ export const MAIN_HISTORY_ID = 0;
 export const METERS_TO_FEET = 3.2808399
 export const FEET_TO_METER = 0.3047999995367042
 export const ROOT_KEY = "root"
+export const FORMA_CONVERTED_ELEMENT_KEY = "FormaConvertedElement"
+// Key for uuid that identifies reference histories so they can be
+// linked on load.
+export const FORMA_REF_HISTORY_LINK_ID = "FormaRefHistoryLinkId"
+export const TOLERANCE_VALUE = 1.0e-12
 
 export const formItLayerNames = {
   FORMA_CONTEXT: "Forma Context",
@@ -131,3 +150,15 @@ export const formItLayerNames = {
   FORMA_ZONE: "zone",
   FORMA_BUILDING_ENVELOPE: "building_envelope",
 }
+
+export type LevelData = {
+  first: string
+  second: number
+  floorFunction?: string
+}
+
+interface Object2d { x: number, y: number }
+interface Object3d extends Object2d { z: number }
+
+interface Point2dInterface extends Object2d, Object { }
+export interface Point3dInterface extends Object3d, Point2dInterface { }
