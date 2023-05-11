@@ -378,7 +378,7 @@ function FormItForma() {
               className="fetchSelect" 
               onChange={handleWorkspaceSelectChange.bind(this)}
               defaultValue={""}
-              hidden
+              //hidden
             >
               { 
                 workspaces?.map(({ id, name }) => (

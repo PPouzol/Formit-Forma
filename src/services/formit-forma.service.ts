@@ -50,9 +50,9 @@ class FormaSaveService {
     else
     {
       //const baseUrl = "https%3A%2F%2Fapp.spacemaker.ai%2Fprojects";
-      const baseUrl = "https://local.spacemaker.ai:3001";
+      const baseUrl = "https://local.autodeskforma.eu:3001";
       const returnUrl = `${baseUrl}?loggedIn=1`;
-      window.location.replace(`https://app.spacemaker.ai/auth/login?rd=${returnUrl}`);
+      window.location.replace(`https://app.autodeskforma.eu/auth/login?rd=${returnUrl}`);
     }
   }
   
