@@ -310,6 +310,7 @@ export async function requestAndLoadGlb(
           async (args) => 
           {            
             let finalLocation: string = args.tempGlbLocation;
+
             //if any of the elementsInGlb are being edited, filter them and then
             //load them separately so we can get their objectId when created as
             //we need to treat them differntly
@@ -346,18 +347,21 @@ export async function requestAndLoadGlb(
               }
 
               //just use the first element node of the glb. We have a 1:1 relationship of an glb to a layer. Meaning we don't split up a glb onto multiple layers.
-              const category = getCategoryFromElementPath(
+              let category = getCategoryFromElementPath(
                 elementsToLoadAsContext[0].fullIdPath,
                 proposalCategorizedPaths
               )
-    
-              if (category) {
-                const categoryLayer = await createOrGetOutOfContextLayer(category)
-                await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, [
-                  typesAndConsts.MAIN_HISTORY_ID,
-                  createdInstanceId
-                ])
+
+              if(!category)
+              { 
+                category = typesAndConsts.formItLayerNames.FORMA_CONTEXT;
               }
+    
+              const categoryLayer = await createOrGetOutOfContextLayer(category)
+              await FormIt.Layers.AssignLayerToObjects(categoryLayer.formItLayerId, [
+                typesAndConsts.MAIN_HISTORY_ID,
+                createdInstanceId
+              ])
     
               const layerVisibility = !hiddenLayers.includes(category)
               FormIt.Layers.SetLayerVisibility(category, layerVisibility)
@@ -451,7 +455,13 @@ export async function requestAndLoadGlb(
 
                   // assign loaded object to a layer to be hidded on save
                   if (!isEditing) {
-                    const category = getCategoryFromElementPath(elementData.path, proposalCategorizedPaths)
+                    let category = getCategoryFromElementPath(elementData.path, proposalCategorizedPaths)
+                    
+                    if(!category)
+                    { 
+                      category = typesAndConsts.formItLayerNames.FORMA_CONTEXT;
+                    }
+
                     await createOrGetOutOfContextLayer(category)
                       .then(async (categoryLayer) => {
                         const layerVisibility = !hiddenLayers.includes(category)
