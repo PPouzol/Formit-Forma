@@ -15,3 +15,13 @@ FormItPlugin.ShowDialog = function(){
 
     FormIt.CreateDialogBox(JSON.stringify(dialogParams));
 }
+
+FormItPlugin.getAllInstancesToBeSaved = function(mapHistoryIdToInitialDeltaId){
+    debugger
+    return getAllInstancesToBeSaved(JSON.stringify(mapHistoryIdToInitialDeltaId));
+}
+
+FormItPlugin.getFloorGeometriesByBuildingId = function(instancesToBeSaved){
+    debugger
+    return getFloorGeometriesByBuildingId(JSON.stringify(instancesToBeSaved));
+}
