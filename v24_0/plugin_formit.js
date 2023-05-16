@@ -1,4 +1,4 @@
-import getAllInstancesToBeSaved from "conceptual-design-formitscope"
+import generatePayload from "./src/utils/saveUtils.ts"
 
 const MAIN_HISTORY_ID = 0;
 
