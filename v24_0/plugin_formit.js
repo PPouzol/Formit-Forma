@@ -1,3 +1,5 @@
+import * as FormItScope from "conceptual-design-formitscope"
+
 const MAIN_HISTORY_ID = 0;
 
 FormItPlugin = {};
@@ -18,10 +20,10 @@ FormItPlugin.ShowDialog = function(){
 
 FormItPlugin.getAllInstancesToBeSaved = function(mapHistoryIdToInitialDeltaId){
     debugger
-    return getAllInstancesToBeSaved(JSON.stringify(mapHistoryIdToInitialDeltaId));
+    return FormItScope.getAllInstancesToBeSaved(JSON.stringify(mapHistoryIdToInitialDeltaId));
 }
 
 FormItPlugin.getFloorGeometriesByBuildingId = function(instancesToBeSaved){
     debugger
-    return getFloorGeometriesByBuildingId(JSON.stringify(instancesToBeSaved));
+    return FormItScope.getFloorGeometriesByBuildingId(JSON.stringify(instancesToBeSaved));
 }
