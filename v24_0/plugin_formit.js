@@ -1,4 +1,4 @@
-import { getAllInstancesToBeSaved, getFloorGeometriesByBuildingId } from "conceptual-design-formitscope"
+import getAllInstancesToBeSaved from "conceptual-design-formitscope"
 
 const MAIN_HISTORY_ID = 0;
 
