@@ -8,6 +8,7 @@ import FormItFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
 import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
 import { setGlobalState, useGlobalState } from "../helpers/stateUtils"
+import { MAIN_HISTORY_ID } from "../helpers/typesAndConstants";
 
 function FormItForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -281,16 +282,33 @@ function FormItForma() {
     FormItFormaService.fetchAndLoadElements(
       [],
       proposal,
-      (proposalId, elementResponseMap, loadedIntegrateElements) => {
+      async (proposalId, elementResponseMap, loadedIntegrateElements) => {
         setMessageType(proposalId ? "success" : "error");
         setMessage(proposalId ? "Datas have been loaded from Forma" : "Loading failed");
         loadContainer.style.display = "none";
         plugContainer.classList.remove('disabled');
 
+        await saveMapHistoryIdToInitialDeltaId();
+
         setGlobalState("elements", elementResponseMap);
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
       }
     );
+  }
+
+  async function saveMapHistoryIdToInitialDeltaId() {    
+    // Save all the delta ids at load time for each history. These ids will be used on save to know if the history is in
+    // a different state and hence needs to be saved.
+    const mapHistoryIdToInitialDeltaId: Map<number, number> = new Map<number, number>()
+    const reachableHistories: number[] = await WSM.APIGetAllReachableHistoriesReadOnly(
+      MAIN_HISTORY_ID,
+      false /*bGoUp*/,
+    )
+    reachableHistories.forEach(async (nHistId: number) => {
+      const nDeltaId = await WSM.APIGetIdOfActiveDeltaReadOnly(nHistId)
+      mapHistoryIdToInitialDeltaId.set(nHistId, nDeltaId)
+      setGlobalState("mapHistoryIdToInitialDeltaId", mapHistoryIdToInitialDeltaId)
+    })
   }
 
   function onSyncClick() {
@@ -307,7 +325,8 @@ function FormItForma() {
         proposal,
         elementResponseMap,
         terrainElevationTransf3d,
-        loadedIntegrateElements
+        loadedIntegrateElements,
+        mapHistoryIdToInitialDeltaId
       }, 
       (result) => {
         setSync(true);
@@ -341,6 +360,7 @@ function FormItForma() {
   const [elementResponseMap] = useGlobalState("elements");
   const [loadedIntegrateElements] = useGlobalState("loadedIntegrate");
   const [terrainElevationTransf3d] = useGlobalState("terrainElevationTransf3d");
+  const [mapHistoryIdToInitialDeltaId] = useGlobalState("mapHistoryIdToInitialDeltaId")
   
   useEffect(() => {
     // on start, disable the button. 

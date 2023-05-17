@@ -61,13 +61,15 @@ class FormaSaveService {
     proposal,
     elementResponseMap,
     terrainElevationTransf3d,
-    loadedIntegrateElements
+    loadedIntegrateElements,
+    mapHistoryIdToInitialDeltaId
   }: {
     projectId: string
     proposal: Proposal
     elementResponseMap: ElementResponse,
     terrainElevationTransf3d: any,
-    loadedIntegrateElements: string[]
+    loadedIntegrateElements: string[],
+    mapHistoryIdToInitialDeltaId: Map<Number, Number>
   }, callback: any) {  
     const hasSomethingToSave = await FormIt.Model.IsModified();
     if(!hasSomethingToSave)
@@ -97,6 +99,7 @@ class FormaSaveService {
                   polygonData,
                   objectId,
                   elementResponseMap,
+                  mapHistoryIdToInitialDeltaId,
                   loadedIntegrateElements,
                   callback
                 );

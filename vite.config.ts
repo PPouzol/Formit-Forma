@@ -1,72 +1,52 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
+import babel from 'vite-plugin-babel';
 const { resolve } = require('path')
 import fs from "fs"
 import os from "os"
+
+const configurations = {
+  main: {
+    entry: resolve(__dirname, 'index.html'),
+    fileName: "formit-plugin",
+    formats: ["es"]
+  },
+}
+
+const libConfig = configurations[process.env.LIB_NAME]
 
 export default defineConfig({
   root: '.',
   base: './',
   build: {
-    outDir: './build',
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html')
-      }
-    }
+    lib: {
+      ...libConfig,
+    },
+    sourcemap: true,
+    emptyOutDir: true,
+    outDir: './build'
   },
   plugins: [
     react(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: './build/assets/*',
-          dest: './deploy/v24_0/assets'
-        },
-        {
-          src: './build/index.html',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './build/login.html',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './manifest.json',
-          dest: './deploy/v24_0',
-          rename: 'manifest.json',
-        },
-        {
-          src: './src/assets',
-          dest: '.'
-        },
-        {
-          src: './src/assets',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './plugin_formit.js',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './README.md',
-          dest: './deploy'
-        },
-        {
-          src: './src/addins/*',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './src/addins/*',
-          dest: '.'
-        },
-        {
-          src: './versions.json',
-          dest: './deploy'
-        }
-      ]
-    })
+    babel({
+      babelConfig: {
+          babelrc: false,
+          configFile: false,
+          targets: {
+            "chrome": "58",
+            "ie": "11"
+          },
+          presets: [
+            [
+              "@babel/preset-env",
+              {
+                "loose": true,
+                "modules": false
+              }
+            ]
+          ]
+      }
+    }),
   ],
   define: {
     __NODE_ENV__: JSON.stringify(process.env.NODE_ENV),

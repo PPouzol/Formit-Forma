@@ -1,12 +1,10 @@
 import { Child, ElementResponse, BaseElement, Urn } from "@spacemakerai/element-types"
 import { formitGeometryToIntegrateAPIPayload } from "../helpers/loadGeometryFromFormit"
 import { parseUrn, removeElementFromMap } from "../helpers/elementUtils"
-import { getUrnFromPath } from "../helpers/loadUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import * as uuid from "uuid"
 import FormaService from "../services/forma.service" 
 import { isEmpty } from "lodash-es"
-import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
 import Proposal from "../components/proposals/proposal"
 import { setGlobalState } from "../helpers/stateUtils"
 
@@ -303,9 +301,11 @@ export async function generatePayload(
   projectId, 
   formitGeometry, 
   elementResponseMap,
+  mapHistoryIdToInitialDeltaId,
   callback) 
 {
-  const floorGeometriesByBuildingId = await getFloorGeometriesByBuildingId()
+  const instancesToBeSaved = FormItInterface.CallMethod("FormItPlugin.getAllInstancesToBeSaved", [mapHistoryIdToInitialDeltaId]);
+  const floorGeometriesByBuildingId = FormItInterface.CallMethod("FormItPlugin.getFloorGeometriesByBuildingId", [instancesToBeSaved]);
 
   // Removing empty conceptual element
   if (formitGeometry.length === 0 && isEmpty(floorGeometriesByBuildingId)) {
@@ -358,6 +358,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
   polygonData?: any,
   objectId?: number,
   elementResponseMap?: ElementResponse,
+  mapHistoryIdToInitialDeltaId?: Map<Number, Number>,
   loadedIntegrateElements?: string[],
   callback?: any) {
     let proposalId = proposal.proposalId;
@@ -380,6 +381,7 @@ export async function createIntegrateAPIElementAndUpdateProposal(
           projectId, 
           formitGeometry,
           elementResponseMap,
+          mapHistoryIdToInitialDeltaId,
           async (integrateAPIPayload) => {
             let proposalElement = await retrieveProposalElements(projectId, proposalId);
 

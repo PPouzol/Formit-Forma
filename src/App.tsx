@@ -9,12 +9,6 @@ declare global {
   let FormItPlugin: any;
   let FormIt: any;
   let WSM: any;
-  // interface window {
-  //   FormIt: any,
-  //   FormItModule: any,
-  //   WSM: any,
-  //   FormItReceiveCoreMessage: (payload?: any) => void
-  // }
 }
 
 function compileFromCookie() {
