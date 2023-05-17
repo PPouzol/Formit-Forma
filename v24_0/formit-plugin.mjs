@@ -78,7 +78,7 @@ FormItPlugin.ShowDialog = function() {
 };
 FormItPlugin.getAllInstancesToBeSaved = function(c) {
   debugger;
-  return getAllInstancesToBeSaved(JSON.stringify(c));
+  return FormItScope.getAllInstancesToBeSaved(JSON.stringify(c));
 };
 FormItPlugin.getFloorGeometriesByBuildingId = function(c) {
   debugger;
@@ -23327,7 +23327,6 @@ async function QL(c, v) {
   return !1;
 }
 async function qL(c, v, p, S, T, b, y) {
-  debugger;
   const N = FormItInterface.CallMethod("FormItPlugin.getAllInstancesToBeSaved", [b]), k = FormItInterface.CallMethod("FormItPlugin.getFloorGeometriesByBuildingId", [N]);
   if (S.length === 0 && Pb(k)) {
     await VE({
