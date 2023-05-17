@@ -5,6 +5,6 @@
     "Panel": "PLUGINLOCATION/index.html",
     "PanelIcon": "PLUGINLOCATION/assets/sync.png",
     "Platforms": ["Windows"],
-    "Scripts": [ "PLUGINLOCATION/plugin_formit.mjs" ],
+    "Scripts": [ "PLUGINLOCATION/formit-plugin.mjs" ],
     "DLLs": [ "PLUGINLOCATION/FormItFormaAddIn.dll" ]
 }
