@@ -1,3 +1,5 @@
+require('conceptual-design-formitscope')
+
 const MAIN_HISTORY_ID = 0;
 
 FormItPlugin = {};
@@ -17,12 +19,9 @@ FormItPlugin.ShowDialog = function(){
 }
 
 FormItPlugin.getAllInstancesToBeSaved = function(mapHistoryIdToInitialDeltaId){
-    debugger
-    WSM.APIGetGroupReferencedHistoryReadOnly(MAIN_HISTORY_ID, 0);
     return getAllInstancesToBeSaved(JSON.stringify(mapHistoryIdToInitialDeltaId));
 }
 
 FormItPlugin.getFloorGeometriesByBuildingId = function(instancesToBeSaved){
-    debugger
     return getFloorGeometriesByBuildingId(JSON.stringify(instancesToBeSaved));
 }
