@@ -8,6 +8,8 @@ import FormItFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
 import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
 import { setGlobalState, useGlobalState } from "../helpers/stateUtils"
+import { MAIN_HISTORY_ID } from "../helpers/typesAndConstants";
+import { WeaveSelect, WeaveSelectOption } from "./hub-selector/FormaComponents";
 
 function FormItForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -365,6 +367,26 @@ function FormItForma() {
 
 	return (
     <div id="FormaControls" className="col-md-12">
+      <div id="hubSelectorContainer" className="col-md-12">
+        <label>Select a hub:</label>
+        <WeaveSelect 
+          id="workspace-select"
+          value={workspaces && workspaces.length > 0 ? workspaces[0].id : ""}
+          class="fetchSelect"
+          onChange={handleWorkspaceSelectChange.bind(this)}>
+          { 
+            workspaces?.map(({ id, name }) => (
+              <WeaveSelectOption 
+              value={id} 
+              key={id}
+              selected={workspaces[0].id == id}
+              class="fetchSelectOption">
+              {name}</WeaveSelectOption>
+            ))
+          }
+        </WeaveSelect>
+      </div>
+    
       <div id="working-container" className="hidden">
         <img id="working-screen"
             src="assets/favicon.svg" 
@@ -374,18 +396,6 @@ function FormItForma() {
       </div>
       <div id="plugin-container" className="plugin">
         <div id="plugin-content">
-          <select id="workspace-select" 
-              className="fetchSelect" 
-              onChange={handleWorkspaceSelectChange.bind(this)}
-              defaultValue={""}
-              //hidden
-            >
-              { 
-                workspaces?.map(({ id, name }) => (
-                  <option value={id} key={id}>{name}</option>
-                ))
-              }
-          </select>
           <ProjectList 
             projects={projects}
             projectSelectionHandler={setSelectedProjectId}

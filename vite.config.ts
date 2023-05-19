@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
 const { resolve } = require('path')
 import fs from "fs"
 import os from "os"
@@ -18,55 +17,6 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: './build/assets/*',
-          dest: './deploy/v24_0/assets'
-        },
-        {
-          src: './build/index.html',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './build/login.html',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './manifest.json',
-          dest: './deploy/v24_0',
-          rename: 'manifest.json',
-        },
-        {
-          src: './src/assets',
-          dest: '.'
-        },
-        {
-          src: './src/assets',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './plugin_formit.js',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './README.md',
-          dest: './deploy'
-        },
-        {
-          src: './src/addins/*',
-          dest: './deploy/v24_0'
-        },
-        {
-          src: './src/addins/*',
-          dest: '.'
-        },
-        {
-          src: './versions.json',
-          dest: './deploy'
-        }
-      ]
-    })
   ],
   define: {
     __NODE_ENV__: JSON.stringify(process.env.NODE_ENV),
@@ -94,6 +44,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/web-components": {
+        target: "https://app.autodeskforma.eu/",
+        changeOrigin: true,
+      },
+      "/design-system": {
         target: "https://app.autodeskforma.eu/",
         changeOrigin: true,
       }

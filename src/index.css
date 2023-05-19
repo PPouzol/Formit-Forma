@@ -45,12 +45,23 @@ h4 {
 
 #MainControls, #AppControls{
   text-align: left;
-  border-top: solid 1px lightsteelblue;
 }
 
 #FormaControls {
   text-align: center;
-  border-top: solid 1px lightsteelblue;
+  border-top: solid 1px lightgray;
+}
+
+#hubSelectorContainer {
+  text-align: left;
+  margin-top: 20px;
+  border-bottom: solid 1px lightgray;
+}
+
+.fetchSelect{
+  width: 250px;
+  margin-bottom: 25px;
+  margin-top: 15px;
 }
 
 #MainControls a{
@@ -115,11 +126,6 @@ h4 {
   font-weight:bold;
   font-size:14px;
   background-color:lightyellow;
-}
-
-.fetchSelect{
-  width: 80%;
-  margin-bottom: 15px;
 }
 
 .noProjects{

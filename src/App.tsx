@@ -9,12 +9,6 @@ declare global {
   let FormItPlugin: any;
   let FormIt: any;
   let WSM: any;
-  // interface window {
-  //   FormIt: any,
-  //   FormItModule: any,
-  //   WSM: any,
-  //   FormItReceiveCoreMessage: (payload?: any) => void
-  // }
 }
 
 function compileFromCookie() {
@@ -57,7 +51,6 @@ function App() {
   return (
       <div id="PluginWrapper">
         <div id='PluginContainer'>
-          <h1 className="title">FormIt-Forma</h1>
           <h3 className="title">Send data between FormIt and Forma</h3>
           <div id="AppControls">
             <div className="container mt-3">
