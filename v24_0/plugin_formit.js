@@ -19,6 +19,8 @@ FormItPlugin.ShowDialog = function(){
 }
 
 FormItPlugin.GetAllInstancesToBeSaved = function(mapHistoryIdToInitialDeltaId){
+    debugger
+    
     let instanceIds = formitScope.getAllInstancesToBeSaved(mapHistoryIdToInitialDeltaId);
     return instanceIds;
 }
