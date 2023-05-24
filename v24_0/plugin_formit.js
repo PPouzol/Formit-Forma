@@ -1,3 +1,5 @@
+const formitScope = require("conceptual-design-formitscope");
+
 const MAIN_HISTORY_ID = 0;
 
 FormItPlugin = {};
@@ -14,4 +16,9 @@ FormItPlugin.ShowDialog = function(){
     };
 
     FormIt.CreateDialogBox(JSON.stringify(dialogParams));
+}
+
+FormItPlugin.GetAllInstancesToBeSaved = function(mapHistoryIdToInitialDeltaId){
+    let instanceIds = formitScope.getAllInstancesToBeSaved(mapHistoryIdToInitialDeltaId);
+    return instanceIds;
 }
