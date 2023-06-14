@@ -143,6 +143,8 @@ function FormItForma() {
             setSync(false);
           }
         }
+        
+        hideShowLoading(false);
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
       setMessageType("error");
@@ -152,6 +154,8 @@ function FormItForma() {
   }
 
   function fillWorkspaceProjects(workspaceId) {
+    hideShowLoading(true);
+
     handleFetchValues(FormaService.getProjects(workspaceId), 
       handleProjectsFetchedValues.bind(this));
   }
@@ -248,11 +252,22 @@ function FormItForma() {
     }   
   }
 
-  async function onLoadClick() {
+  function hideShowLoading(show) {
     let loadContainer = document.getElementById("working-container");
-    loadContainer.style.display = "flex";
     let plugContainer = document.getElementById("plugin-container");
-    plugContainer.classList.add('disabled');
+    if(show) {
+      loadContainer.style.display = "flex";
+      plugContainer.classList.add('disabled');
+    }
+    else {
+      loadContainer.style.display = "none";
+      plugContainer.classList.remove('disabled');
+    }
+  }
+
+  async function onLoadClick() {
+    hideShowLoading(true);
+
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Loading datas from Forma...";
@@ -284,9 +299,9 @@ function FormItForma() {
       (proposalId, elementResponseMap, loadedIntegrateElements) => {
         setMessageType(proposalId ? "success" : "error");
         setMessage(proposalId ? "Datas have been loaded from Forma" : "Loading failed");
-        loadContainer.style.display = "none";
-        plugContainer.classList.remove('disabled');
 
+        hideShowLoading(false);
+    
         setGlobalState("elements", elementResponseMap);
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
       }
