@@ -31,10 +31,17 @@ function FormItForma() {
           filledObj.Fill(e.id, e.name, e.version, e.metadata, e.urn);
           return filledObj;
         });
-        setWorkspaces(workspaces)
+        setWorkspaces(workspaces);
+
         if(workspaces.length > 0)
         {
-          fillWorkspaceProjects(workspaces[0].id);
+          // only for very first call, do not fill the project and proposal again or it may override the currently selected workspace's.
+          // it'll be handled on handleWorkspaceSelectChange
+          if(!workspaceId)
+          {
+            setCurrentWorkspace(workspaces[0].id);
+            fillWorkspaceProjects(workspaces[0].id);
+          }
         }
       }
     } catch (error) {
@@ -137,13 +144,6 @@ function FormItForma() {
           setMessageType("info");
           setMessage("");
         }
-        else {
-          if(statusType !== "error")
-          {
-            setSync(false);
-          }
-        }
-        
         hideShowLoading(false);
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
@@ -158,6 +158,13 @@ function FormItForma() {
 
     handleFetchValues(FormaService.getProjects(workspaceId), 
       handleProjectsFetchedValues.bind(this));
+  }
+
+  function handleWorkspaceSelectClick() {
+    if(!project) {
+      handleFetchValues(FormaService.getWorkspaces(), 
+        handleWorkspacesFetchedValues.bind(this));
+    }
   }
 
   function handleWorkspaceSelectChange()  {
@@ -304,6 +311,8 @@ function FormItForma() {
     
         setGlobalState("elements", elementResponseMap);
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
+        
+        setSync(false);
       }
     );
   }
@@ -345,6 +354,7 @@ function FormItForma() {
   const [statusType, setMessageType] = useState("info")
   // workspaces
   const [workspaces, setWorkspaces] = useState<fetchResultObj[]>()
+  const [workspaceId, setCurrentWorkspace] = useState<string>(null)
   // projects
   const [project, setCurrentProject] = useState<Project>(null)
   const [projects, setProjects] = useState<Project[]>()
@@ -374,8 +384,14 @@ function FormItForma() {
   
   // get workspaces from API
   useEffect(() => {
-    handleFetchValues(FormaService.getWorkspaces(), 
-      handleWorkspacesFetchedValues.bind(this));
+    if(!synced) {
+      if(!workspaceId)
+      {
+        handleFetchValues(FormaService.getWorkspaces(), 
+          handleWorkspacesFetchedValues.bind(this));
+      }
+      fillWorkspaceProjects(workspaceId);
+    }
   }, [synced])
 
 	return (
@@ -391,6 +407,7 @@ function FormItForma() {
         <div id="plugin-content">
           <select id="workspace-select" 
               className="fetchSelect" 
+              onClick={handleWorkspaceSelectClick.bind(this)}
               onChange={handleWorkspaceSelectChange.bind(this)}
               defaultValue={""}
               //hidden
