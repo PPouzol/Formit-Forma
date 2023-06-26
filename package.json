@@ -34,7 +34,8 @@
     "uuid": "^8.3.2",
     "@composi/idb": "^1.0.10",
     "styled-components": "^5.3.5",
-    "react-hooks-global-state": "^2.0.0-rc.0"
+    "react-hooks-global-state": "^2.0.0-rc.0",
+    "conceptual-design-formitscope": "^1.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.27",

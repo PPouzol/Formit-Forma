@@ -7,11 +7,12 @@ import {
 import { parseUrn } from "../helpers/elementUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
 import { ElementResponse  } from "@spacemakerai/element-types"
-import { downloadAllChild, getUrlAndLoad, getElementsAndSaveCache } from "../helpers/downloadUtils"
-import { hideLayersBeforeSave, getFormItGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
+import { downloadAllChild, getUrlAndLoad } from "../helpers/downloadUtils"
+import { getFormItGeometry, createIntegrateAPIElementAndUpdateProposal } from "../helpers/saveUtils"
 import { createCategoryLayers } from "../helpers/layerUtils"
 import Proposal from "../components/proposals/proposal"
 import formaService from "./forma.service"
+import { hideLayersBeforeSave } from "conceptual-design-formitscope"
 
 class FormaSaveService {
   getCookie(cookieName)
@@ -61,21 +62,24 @@ class FormaSaveService {
     proposal,
     elementResponseMap,
     terrainElevationTransf3d,
-    loadedIntegrateElements
+    loadedIntegrateElements,
+    mapHistoryIdToInitialDeltaId
   }: {
     projectId: string
     proposal: Proposal
     elementResponseMap: ElementResponse,
     terrainElevationTransf3d: any,
-    loadedIntegrateElements: string[]
+    loadedIntegrateElements: string[],
+    mapHistoryIdToInitialDeltaId: Map<number, number>
   }, callback: any) {  
     const hasSomethingToSave = await FormIt.Model.IsModified();
     if(!hasSomethingToSave)
       return;
-      
+    // Get all the instances that need to be saved.
     this.beforeSaveLayerHandling()
       .then(async() => {
-        hideLayersBeforeSave()
+         let hideLayersPromises = hideLayersBeforeSave();
+         await Promise.all(hideLayersPromises)
           .then(async (previousLayersVisibility) => {
             // Make sure each top level body and mesh is put into its own instance.
             // The code assumes that levels are only applied to instances at this
@@ -88,7 +92,6 @@ class FormaSaveService {
                   polygonData = {};
 
                 let objectId = 0;
-
                 createIntegrateAPIElementAndUpdateProposal(
                   terrainElevationTransf3d,
                   formitGeometry,
@@ -98,11 +101,12 @@ class FormaSaveService {
                   objectId,
                   elementResponseMap,
                   loadedIntegrateElements,
+                  mapHistoryIdToInitialDeltaId,
                   callback
                 );
               }
             );
-        });
+          });
       })
   }
 
@@ -146,13 +150,6 @@ class FormaSaveService {
     }
   }
 
-  async getElementsAndSaveCache(
-    proposal: Proposal,
-    callback: any
-  ) {
-    await getElementsAndSaveCache(proposal.projectId, proposal.proposalId, callback);
-  }
-  
   getTopLevelObjects(
     elements: Record<Urn, BaseElement>,
     rootUrn: string,

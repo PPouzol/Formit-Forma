@@ -195,15 +195,6 @@ const multiplyTransforms = (src1: Transform, src2: Transform) => {
     return dest
   }
 
- export function getUrnFromPath(path: string, elementResponseMap: ElementResponse) {
-   const rootUrn = Object.values(elementResponseMap).find(
-     (element) => element.properties.category === "proposal",
-   )?.urn
-   const pathMap = getPathToUrn(elementResponseMap, rootUrn)
- 
-   return pathMap[path]
- }
-
  export async function loadTerrain(
     proposalId: string,
     terrainDetails: typesAndConsts.ElementDetails,

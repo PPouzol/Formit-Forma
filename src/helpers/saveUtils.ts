@@ -1,137 +1,35 @@
 import { Child, ElementResponse, BaseElement, Urn } from "@spacemakerai/element-types"
 import { formitGeometryToIntegrateAPIPayload } from "../helpers/loadGeometryFromFormit"
-import { parseUrn, removeElementFromMap } from "../helpers/elementUtils"
-import { getUrnFromPath } from "../helpers/loadUtils"
+import { parseUrn } from "../helpers/elementUtils"
 import * as typesAndConsts from "../helpers/typesAndConstants"
-import * as uuid from "uuid"
 import FormaService from "../services/forma.service" 
 import { isEmpty } from "lodash-es"
-import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
 import Proposal from "../components/proposals/proposal"
 import { setGlobalState } from "../helpers/stateUtils"
+import { getFloorGeometriesByBuildingId } from "../helpers/buildingFloorUtils"
 
-export async function getFormItGeometry(previousLayersVisibility, names, callback) {
-    FormIt.Layers.SetLayerVisibility(names, false)
-      .then(() => {
-        WSM.Utils.GetAllGeometryInformation(typesAndConsts.MAIN_HISTORY_ID)
-          .then((formitGeometry) =>
+import { returnLayersToPreviousVibility, getPolygonData, 
+  updateProposalElement, createOrUpdateElement } from "conceptual-design-formitscope"
+
+export async function getFormItGeometry(previousLayersVisibility, names, callback) { 
+    WSM.Utils.GetAllGeometryInformation(typesAndConsts.MAIN_HISTORY_ID)
+      .then((formitGeometry) =>
+      {
+        // We need to set 3D Sketch buildings layer visibility to true before getting polygon data
+        FormIt.Layers.SetLayerVisibility(names, true)
+          .then(() => {
+            returnLayersToPreviousVibility(previousLayersVisibility);
+            let polygonData = getPolygonData(typesAndConsts.MAIN_HISTORY_ID, formitGeometry);
+            if(callback)
             {
-              // We need to set 3D Sketch buildings layer visibility to true before getting polygon data
-              FormIt.Layers.SetLayerVisibility(names, true)
-                .then(() => {
-                  returnLayersToPreviousVibility(previousLayersVisibility)
-                    .then(() => {
-                      getPolygonData(typesAndConsts.MAIN_HISTORY_ID, formitGeometry, callback);
-                    })
-                });
-            });
-      })
+              callback(formitGeometry, polygonData);
+            }
+          });
+      });
   }
 
-export async function getAllGeometryInformations() {
-    var geometries = await WSM.Utils.GetAllGeometryInformation(typesAndConsts.MAIN_HISTORY_ID);
-    if(geometries === null)
-      geometries = [];
-    return geometries;
-  }
-
-export async function returnLayersToPreviousVibility(
-    layers: Array<{ layerData: { Visible: boolean }; previousVisiblity: boolean }>,
-  ) {
-    await layers.forEach(async (layer) => {
-      if (layer.layerData) {
-        layer.layerData.Visible = layer.previousVisiblity
-        await FormIt.Layers.SetLayersVisibility([layer.layerData])
-      }
-    })
-  }
-
-export async function hideLayersBeforeSave() {
-    const layersToAvoidSaving = [
-      typesAndConsts.formItLayerNames.FORMA_CONTEXT,
-      typesAndConsts.formItLayerNames.FORMA_TERRAIN,
-      typesAndConsts.formItLayerNames.SURROUNDING_BUILDINGS,
-      typesAndConsts.formItLayerNames.FORMA_AUTO_BUILDINGS,
-      typesAndConsts.formItLayerNames.FORMA_PROPOSAL_BUILDINGS,
-      typesAndConsts.formItLayerNames.FORMA_SITE_LIMIT,
-      typesAndConsts.formItLayerNames.FORMA_BUILDING,
-      typesAndConsts.formItLayerNames.FORMA_VEGETATION,
-      typesAndConsts.formItLayerNames.FORMA_GENERIC,
-      typesAndConsts.formItLayerNames.FORMA_ROAD,
-      typesAndConsts.formItLayerNames.FORMA_RAILS,
-      typesAndConsts.formItLayerNames.FORMA_PROPERTY_BOUNDARY,
-      typesAndConsts.formItLayerNames.FORMA_ZONE,
-      typesAndConsts.formItLayerNames.FORMA_BUILDING_ENVELOPE
-    ];
-
-    let results = [];
-    for(const layerName of layersToAvoidSaving)
-    {
-      let layerVisibility = await mapLayerVisibility(layerName);
-      if(layerVisibility.layerData) {
-        results.push(layerVisibility);
-      }
-    }
-
-    return results;
-  }
-
-export async function mapLayerVisibility(layerName: string) {
-      const formItLayerId = await FormIt.Layers.GetLayerID(layerName)
-      let previousVisiblity = false
-      let layerData
-  
-      if (formItLayerId != WSM.INVALID_ID) {
-        layerData = await FormIt.Layers.GetLayerData(formItLayerId)
-        previousVisiblity = layerData.Visible
-        layerData.Visible = false
-        await FormIt.Layers.SetLayersVisibility([layerData])
-      }
-  
-      return {
-        layerData,
-        previousVisiblity,
-      }
-  }
-
-export async function getPolygonData(objectId = WSM.INVALID_ID, formitGeometry, callback) {
-  WSM.Utils.ComputeGeometryFromLevels(typesAndConsts.MAIN_HISTORY_ID, false, objectId)
-    .then((geometryData) => {
-      let polygonData = {}
-      if(geometryData)
-      {
-          (geometryData as any[]).map((geometryForLevel) => {
-          const { outer_loop, inner_loops } = geometryForLevel.second[0]
-
-          const outerRings: typesAndConsts.Polygon = (outer_loop.vertices as any[]).map((point3d) => [
-            point3d.x * typesAndConsts.FEET_TO_METER,
-            point3d.y * typesAndConsts.FEET_TO_METER,
-          ])
-
-          const multiRingPolygon = [outerRings]
-
-          if (inner_loops.length > 0) {
-            const innerRings: typesAndConsts.Polygon = (inner_loops[0].vertices as any[]).map((point3d) => [
-              point3d.x * typesAndConsts.FEET_TO_METER,
-              point3d.y * typesAndConsts.FEET_TO_METER,
-            ])
-
-            multiRingPolygon.push(innerRings)
-          }
-
-          return multiRingPolygon
-        }) as typesAndConsts.MultiRingPolygon[];
-      }
-
-      if(callback)
-      {
-        callback(formitGeometry, polygonData);
-      }
-    });
-  }
-
-  // This saves the top history by ending edit in context. So
-  // do NOT call this except when ending the submode.
+// This saves the top history by ending edit in context. So
+// do NOT call this except when ending the submode.
 export async function saveTemp(objectId: number) {
     await FormIt.GroupEdit.EndEditInContext();
     let savedAxm;
@@ -303,20 +201,25 @@ export async function generatePayload(
   projectId, 
   formitGeometry, 
   elementResponseMap,
+  proposalElement,
   callback) 
 {
+  debugger
+
   const floorGeometriesByBuildingId = await getFloorGeometriesByBuildingId()
 
   // Removing empty conceptual element
   if (formitGeometry.length === 0 && isEmpty(floorGeometriesByBuildingId)) {
     let editingElementUrn = "";
 
-    await updateProposalElement({
+    updateProposalElement({
       elementId: proposalId,
       authContext: projectId,
       urnToDelete: editingElementUrn,
-      elementResponseMap: elementResponseMap,
-      proposalElement: null
+      elementResponseMap: elementResponseMap
+    })
+    .then(() => {
+      addElementToMap(projectId, proposalId, elementResponseMap, proposalElement)
     })
 
     return
@@ -359,7 +262,10 @@ export async function createIntegrateAPIElementAndUpdateProposal(
   objectId?: number,
   elementResponseMap?: ElementResponse,
   loadedIntegrateElements?: string[],
+  mapHistoryIdToInitialDeltaId?: Map<number, number>,
   callback?: any) {
+    debugger
+
     let proposalId = proposal.proposalId;
     let proposalUrn = proposal.urn;
 
@@ -374,14 +280,16 @@ export async function createIntegrateAPIElementAndUpdateProposal(
           console.error("Can't save temporary wsm file.");
           return;
         }
+        let proposalElement = await retrieveProposalElements(projectId, proposalId);
+
         generatePayload(
           inverseTerrainElevationTransf3d, 
           proposalId, 
           projectId, 
           formitGeometry,
           elementResponseMap,
+          proposalElement,
           async (integrateAPIPayload) => {
-            let proposalElement = await retrieveProposalElements(projectId, proposalId);
 
             let editingElementId = "";
             let editingElementUrn = "";
@@ -393,6 +301,8 @@ export async function createIntegrateAPIElementAndUpdateProposal(
 
             if(elementResponseMap)
             {
+              debugger
+
               let currentProposal = elementResponseMap[proposalUrn];
               if(currentProposal) {
                 const integrateElements = Object.values(currentProposal.children).filter(
@@ -494,29 +404,56 @@ async function storeAndUpdateProposal(ids, integrateAPIPayload, savedAxm, polygo
             return;
           }
           await createElementAndUpdateProposal(projectId, integrateAPIPayload, spacemakerObjectStorageReferenceId,
-            editingElementId, polygonData, proposalId, editingElementUrn, proposalElement, elementResponseMap, callback);
+            editingElementId, proposalId, editingElementUrn, proposalElement, elementResponseMap, callback);
       });
     }
     else {
+      debugger
+      if(proposalElement === null) {
+        proposalElement = await retrieveProposalElements(projectId, proposalId);
+      }
+      else
+      {
+        // clear previously stored proposal element, which is now obsolete due to new revision
+        elementResponseMap = removeElementFromMap(elementResponseMap, proposalElement.urn);
+      }
+
       return await updateProposalElement({
         elementId: proposalId,
         authContext: projectId,
-        elementResponseMap: elementResponseMap,
         urnToDelete: deletingUrn,
-        proposalElement: proposalElement
+        elementResponseMap: elementResponseMap,
       });
     }
   }
 
 async function createElementAndUpdateProposal(projectId, integrateAPIPayload, spacemakerObjectStorageReferenceId,
-  editingElementId, polygonData, proposalId, editingElementUrn, proposalElement, elementResponseMap, callback) {
-  createOrUpdateElement(
+  editingElementId, proposalId, editingElementUrn, proposalElement, elementResponseMap, callback) {
+  let editingElementSystem: string
+  let needsChangeOfOwnership: boolean
+    
+  if (editingElementUrn) {
+    const urnParts = parseUrn(editingElementUrn)
+    editingElementId = urnParts.id
+    editingElementSystem = urnParts.system
+  }
+
+  //Check the system of the edting element, which may not be integrate (could be floor-stacks system).
+  //If it's not the integrate system, we need to do a change of ownership which involves:
+  //1. Creating new element
+  //2. Add new element to proposal
+  //3. Remove the previous element ref from proposal
+  if (editingElementSystem && editingElementSystem !== "integrate") {
+    needsChangeOfOwnership = true
+  }
+
+  createOrUpdateElement({
     projectId,
-    integrateAPIPayload,
-    spacemakerObjectStorageReferenceId,
-    editingElementId,
-    polygonData
-  )
+    payloadData: integrateAPIPayload,
+    spacemakerObjectStorageReference: spacemakerObjectStorageReferenceId,
+    //Item 1 from above, do not pass editingElementId so we create a new element.
+    editingElementId: needsChangeOfOwnership ? undefined : editingElementId,
+  })
   .then(async (createdOrUpdatedElementResult) => {
     if(!createdOrUpdatedElementResult || (typeof createdOrUpdatedElementResult === 'string' || createdOrUpdatedElementResult instanceof String))
     {
@@ -526,14 +463,17 @@ async function createElementAndUpdateProposal(projectId, integrateAPIPayload, sp
       }
     }
     else if (createdOrUpdatedElementResult) {
+      // clear previously stored proposal element, which is now obsolete due to new revision
+      elementResponseMap = removeElementFromMap(elementResponseMap, proposalElement.urn);
+
       updateProposalElement({
         elementId: proposalId,
         authContext: projectId,
         elementResponseMap: elementResponseMap,
-        createdUrn: createdOrUpdatedElementResult.urn,
-        proposalElement: proposalElement
+        createdUrn: createdOrUpdatedElementResult.urn
       })
       .then((result) => {
+        addElementToMap(projectId, proposalId, elementResponseMap, proposalElement)
         if(callback)
         {
           callback(result);
@@ -550,7 +490,7 @@ async function createElementAndUpdateProposal(projectId, integrateAPIPayload, sp
   });
 }
 
-export async function createOrUpdateElement(
+export async function createOrUpdateElementLoc(
     projectId: string,
     apiPayloadPromise: ReturnType<typeof formitGeometryToIntegrateAPIPayload>,
     spacemakerObjectStorageReference: string,
@@ -605,82 +545,6 @@ export async function createOrUpdateElement(
     return false
   }
 
-export async function updateProposalElement({
-    elementId,
-    authContext,
-    elementResponseMap,
-    createdUrn,
-    urnToDelete,
-    proposalElement
-  }: {
-    elementId: string
-    authContext: string
-    elementResponseMap?: ElementResponse
-    createdUrn?: string
-    urnToDelete?: string
-    proposalElement: BaseElement
-  }) {
-    if(proposalElement === null) {
-      proposalElement = await retrieveProposalElements(authContext, elementId);
-    }
-    else
-    {
-      // clear previously stored proposal element, which is now obsolete due to new revision
-      elementResponseMap = removeElementFromMap(elementResponseMap, proposalElement.urn);
-    }
-
-    const { revision } = parseUrn(proposalElement.urn)
-
-    if (urnToDelete) {
-      elementResponseMap = removeElementFromMap(elementResponseMap, urnToDelete);
-      proposalElement.children = proposalElement.children.filter((element: Child) => {
-        return element.urn !== urnToDelete
-      })
-    } else if (createdUrn) {
-      proposalElement.children.push({
-        urn: createdUrn,
-        key: uuid.v4(),
-      } as Child)
-    } else {
-      console.error("not a valid update, bad parameters")
-      return false
-    }
-  
-    try {
-      const res = await fetch(
-        `/api/proposal/elements/${elementId}/revisions/${revision}?version=2&authcontext=${authContext}`,
-        {
-          method: "PUT",
-          body: JSON.stringify(proposalElement),
-        }
-      )
-      if(res.ok)
-      {        
-        Object.values(proposalElement!.children).filter(
-          (element) => element.urn.indexOf("integrate") > -1
-        ).forEach(
-          (integrate) => {
-            if(!elementResponseMap[integrate.urn])
-            {
-              elementResponseMap[integrate.urn] = integrate;
-            }
-          }
-        );
-
-        // update proposal in elementResponseMap after successfully created new revision
-        retrieveProposalElements(authContext, elementId)
-          .then((proposalElement) => {
-            elementResponseMap[proposalElement.urn] = proposalElement
-          });
-        setGlobalState("elements", elementResponseMap);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      return false;
-    }
-  }
-
 export async function retrieveProposalElements(projectId, proposalId) {
   const proposalElementResponse: ElementResponse | null = await FormaService.getProposalElement(
     proposalId,
@@ -732,3 +596,35 @@ export async function uploadData(url: string, data: string) {
       return false
     }
   }
+
+export function removeElementFromMap(elementResponseMap, keyToRemove) {
+  let clearedMap: ElementResponse = {};
+  for (const [urn, element] of Object.entries(elementResponseMap)) {
+    if(urn !== keyToRemove)
+    {
+      clearedMap[urn] = element;
+    }
+  }
+  return clearedMap;
+}
+
+function addElementToMap(authContext: string, elementId: string, 
+  elementResponseMap: ElementResponse, proposalElement: BaseElement) {
+  Object.values(proposalElement!.children).filter(
+    (element) => element.urn.indexOf("integrate") > -1
+  ).forEach(
+    (integrate) => {
+      if(!elementResponseMap[integrate.urn])
+      {
+        elementResponseMap[integrate.urn] = integrate;
+      }
+    }
+  );
+
+  // update proposal in elementResponseMap after successfully created new revision
+  retrieveProposalElements(authContext, elementId)
+    .then((proposalElement) => {
+      elementResponseMap[proposalElement.urn] = proposalElement
+    });
+  setGlobalState("elements", elementResponseMap);
+}

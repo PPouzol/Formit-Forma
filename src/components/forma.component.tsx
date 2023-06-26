@@ -8,6 +8,7 @@ import FormItFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
 import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
 import { setGlobalState, useGlobalState } from "../helpers/stateUtils"
+import { MAIN_HISTORY_ID } from "../helpers/typesAndConstants"
 
 function FormItForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -313,8 +314,25 @@ function FormItForma() {
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
         
         setSync(false);
+
+        fillMapHistory();
       }
     );
+  }
+
+  async function fillMapHistory() {
+    // Save all the delta ids at load time for each history. These ids will be used on save to know if the history is in
+    // a different state and hence needs to be saved.
+    const reachableHistories: number[] = await WSM.APIGetAllReachableHistoriesReadOnly(
+      MAIN_HISTORY_ID,
+      false /*bGoUp*/,
+    )
+    reachableHistories.forEach(async (nHistId: number) => {
+      const nDeltaId = await WSM.APIGetIdOfActiveDeltaReadOnly(nHistId)
+      mapHistoryIdToInitialDeltaId.set(nHistId, nDeltaId)
+    })
+
+    setGlobalState("mapHistoryIdToInitialDeltaId", mapHistoryIdToInitialDeltaId)
   }
 
   function onSyncClick() {
@@ -331,7 +349,8 @@ function FormItForma() {
         proposal,
         elementResponseMap,
         terrainElevationTransf3d,
-        loadedIntegrateElements
+        loadedIntegrateElements,
+        mapHistoryIdToInitialDeltaId
       }, 
       (result) => {
         setSync(true);
@@ -342,12 +361,29 @@ function FormItForma() {
         }
         else
         {
+          updateProposalAfterSync();
           setMessageType(result ? "success" : "error");
           setMessage(result ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
         }
         container.classList.remove('disabled');
       }
     );
+  }
+
+  function updateProposalAfterSync() {
+    if(proposal)
+    {
+      project.proposals.forEach(prop => {
+        if(proposal.id === prop.id)
+        {                    
+          retrieveProposalElements(project.projectId, proposal.proposalId)
+            .then((proposalElement) => {
+              elementResponseMap[proposalElement.urn] = proposalElement
+              proposal.urn = proposalElement.urn
+            });
+        }
+      });
+    }
   }
 
   const [statusMessage, setMessage] = useState("")
@@ -366,6 +402,7 @@ function FormItForma() {
   const [elementResponseMap] = useGlobalState("elements");
   const [loadedIntegrateElements] = useGlobalState("loadedIntegrate");
   const [terrainElevationTransf3d] = useGlobalState("terrainElevationTransf3d");
+  const [mapHistoryIdToInitialDeltaId] = useGlobalState("mapHistoryIdToInitialDeltaId");
   
   useEffect(() => {
     // on start, disable the button. 
