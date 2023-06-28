@@ -22,7 +22,7 @@ function ProjectComponent(props: Props) {
                 projectSelectionHandler(project.id); 
             }}>
             <ProjectS.Content id={project.projectId} 
-                className={isSelected ? "project selected" : "project"}>
+                className="project">
                 <ProjectS.InfosContainer className="infos">
                     <ProjectS.ThumbnailContainer>
                         <ProjectS.Thumbnail>

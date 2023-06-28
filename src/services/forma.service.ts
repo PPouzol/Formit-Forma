@@ -85,6 +85,10 @@ class FormaService {
   }
 
   FormatThumbnailUrl(projectId: string, urn: string) {
+    if(!urn)
+    {
+      return '';
+    }
     return `${API_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
   }
   

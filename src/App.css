@@ -15,10 +15,8 @@ label {
 }
 
 .plugin {
+  width: 90%;
   max-width: 350px !important;
-}
-
-.plugin {
   background-color: #f7f7f7;
   padding: 5px 15px 15px 5px;
   margin: 0 auto 25px;
@@ -45,14 +43,36 @@ label {
 }
 
 .project, .proposal {
-  border: 1.5px solid rgb(223, 224, 226);
+  border: 1.5px solid rgb(150, 150, 150);
 }
 
 .selected {
   border: 1.5px solid rgb(139, 139, 142);
+  width: 100% !important;
+  margin-right: auto;
+  margin: 0rem auto .5rem 0rem !important;
+}
+
+.proposal-container {
+  margin-left: -5rem;
+}
+
+.select-proposal-list {
+  padding-bottom: 15px;
+  border-bottom: solid 1px lightgray;
 }
 
 .disabled {
   pointer-events: none;
   opacity: 0.2;
+}
+
+#selectedProposal {
+  display: none; 
+  flex-direction: column;
+}
+
+#projectList {
+  display: flex; 
+  flex-direction: column;
 }

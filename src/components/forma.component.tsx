@@ -10,6 +10,7 @@ import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
 import { setGlobalState, useGlobalState } from "../helpers/stateUtils"
 import { MAIN_HISTORY_ID } from "../helpers/typesAndConstants";
 import { WeaveSelect, WeaveSelectOption } from "./hub-selector/FormaComponents";
+import SelectedProposal from "./proposals/selected-proposal.component";
 
 function FormItForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -36,7 +37,13 @@ function FormItForma() {
         setWorkspaces(workspaces)
         if(workspaces.length > 0)
         {
-          fillWorkspaceProjects(workspaces[0].id);
+          // only for very first call, do not fill the project and proposal again or it may override the currently selected workspace's.
+          // it'll be handled on handleWorkspaceSelectChange
+          if(!workspaceId)
+          {
+            setCurrentWorkspace(workspaces[0].id);
+            fillWorkspaceProjects(workspaces[0].id);
+          }
         }
       }
     } catch (error) {
@@ -59,9 +66,11 @@ function FormItForma() {
           let nowTime = new Date().getTime();
           let creationTimeDiff = nowTime - e.created;
           let dayCount = Math.floor(creationTimeDiff / (1000*24*60*60));
+          filledObj.createdSince = dayCount;
           filledObj.creationTime = dayCount == 0 ? `Today` : `${dayCount} days ago`;
           return filledObj;
-        });
+        })
+        .sort((a,b) => (a.createdSince > b.createdSince) ? 1 : ((b.createdSince > a.createdSince) ? -1 : 0));
 
       await fillProposals(projectsResults);
       if(!synced) {
@@ -158,6 +167,13 @@ function FormItForma() {
       handleProjectsFetchedValues.bind(this));
   }
 
+  function handleWorkspaceSelectClick() {
+    if(!project) {
+      handleFetchValues(FormaService.getWorkspaces(), 
+        handleWorkspacesFetchedValues.bind(this));
+    }
+  }
+
   function handleWorkspaceSelectChange()  {
     let workspaceSelect = (document.getElementById("workspace-select")) as HTMLSelectElement;
     if(workspaceSelect !== null)
@@ -182,13 +198,12 @@ function FormItForma() {
         setCurrentProject(null);
       }
     }
-    updateButtonsState("");
   }
 
-  async function setSelectedProposalId(newProposalId) {
-    if(proposal !== null && proposal?.proposalId === newProposalId) {
-      setCurrentProposal(null);
-      newProposalId = "";
+  async function setSelectedProposalId(newProposalId, fromBackAction) {
+    let sameAsPreviously = proposal?.proposalId === newProposalId;
+    if(fromBackAction) {      
+      hideShowSelected(false);
     }
     else {
       if(project !== null) {
@@ -202,6 +217,8 @@ function FormItForma() {
             .then((proposalElement) => {
               elementResponseMap[proposalElement.urn] = proposalElement
             });
+
+          hideShowSelected(true);
         }
         else {
           setCurrentProposal(null);
@@ -211,10 +228,26 @@ function FormItForma() {
         setCurrentProposal(null);
       }
     }
-    updateButtonsState(newProposalId);
+
+    if(newProposalId) {
+      updateButtonsState(newProposalId, sameAsPreviously);
+    }
   }
 
-  async function updateButtonsState(proposalId) {
+  function hideShowSelected(showProposal) {
+    let projectListContainer = document.getElementById("projectList");
+    let selectedProposalContainer = document.getElementById("selectedProposal");
+    if(showProposal) {
+      projectListContainer.style.display = "none";
+      selectedProposalContainer.style.display = "flex";
+    }
+    else {
+      projectListContainer.style.display = "flex";
+      selectedProposalContainer.style.display = "none";
+    }
+  }
+
+  async function updateButtonsState(proposalId, sameAsPreviously) {
     const idsProvided = project !== null && project?.projectId !== "" && proposalId !== "";
     let syncButton = document.getElementById("sync-btn");
     let loadButton = document.getElementById("load-btn");
@@ -222,30 +255,37 @@ function FormItForma() {
     if(syncButton !== null)
     {
       let button = (syncButton as HTMLButtonElement);
-      let disabled = !idsProvided;
-      button.disabled = disabled;
-      if(!disabled)
+      if(button)
       {
-        button.classList.remove('disabled');
-      }
-      else if(!button.classList.contains('disabled'))
-      {
-        button.classList.add('disabled');
+        let disabled = fetchedProposalId != proposalId;
+        button.disabled = disabled;
+        // sync button is not disabled, but hidden
+        if(!disabled)
+        {
+          button.classList.remove('hidden');
+        }
+        else if(!button.classList.contains('hidden'))
+        {
+          button.classList.add('hidden');
+        }
       }
     }   
     
     if(loadButton !== null)
     {
       let button = (loadButton as HTMLButtonElement);
-      let disabled = !idsProvided;
-      button.disabled = disabled;
-      if(!disabled)
+      if(button)
       {
-        button.classList.remove('disabled');
-      }
-      else if(!button.classList.contains('disabled'))
-      {
-        button.classList.add('disabled');
+        let disabled = !idsProvided || (fetchedProposalId == proposalId);
+        button.disabled = disabled;
+        if(!disabled)
+        {
+          button.classList.remove('disabled');
+        }
+        else if(!button.classList.contains('disabled'))
+        {
+          button.classList.add('disabled');
+        }
       }
     }   
   }
@@ -254,7 +294,9 @@ function FormItForma() {
     let loadContainer = document.getElementById("working-container");
     loadContainer.style.display = "flex";
     let plugContainer = document.getElementById("plugin-container");
+    let proposalContainer = document.getElementById("selectedProposal");
     plugContainer.classList.add('disabled');
+    proposalContainer.classList.add('disabled');
     let message = document.getElementById("message");
     message.className = "info";
     message.textContent = "Loading datas from Forma...";
@@ -288,11 +330,24 @@ function FormItForma() {
         setMessage(proposalId ? "Datas have been loaded from Forma" : "Loading failed");
         loadContainer.style.display = "none";
         plugContainer.classList.remove('disabled');
+        proposalContainer.classList.remove('disabled');
 
         setGlobalState("elements", elementResponseMap);
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
+
+        setSync(false);
+        setFetch(proposalId);
+
+        if(proposalId)
+        {
+          FormIt.View.FitToSelection();
+        }
       }
     );
+  }
+
+  function onBackClick() {
+    setSelectedProposalId(proposal.id, true);
   }
 
   function onSyncClick() {
@@ -331,6 +386,7 @@ function FormItForma() {
   const [statusMessage, setMessage] = useState("")
   const [statusType, setMessageType] = useState("info")
   // workspaces
+  const [workspaceId, setCurrentWorkspace] = useState<string>(null)
   const [workspaces, setWorkspaces] = useState<fetchResultObj[]>()
   // projects
   const [project, setCurrentProject] = useState<Project>(null)
@@ -338,6 +394,7 @@ function FormItForma() {
   // proposals
   const [proposal, setCurrentProposal] = useState<Proposal>(null)
   // elements
+  const [fetchedProposalId, setFetch] = useState<string>("")
   const [synced, setSync] = useState(false)
 
   const [elementResponseMap] = useGlobalState("elements");
@@ -359,56 +416,69 @@ function FormItForma() {
     }  
   }, [])
   
-  // get workspaces from API
-  useEffect(() => {
+  if(!workspaceId)
+  {
     handleFetchValues(FormaService.getWorkspaces(), 
       handleWorkspacesFetchedValues.bind(this));
-  }, [synced])
+  }
+  
+  // get workspaces from API
+  useEffect(() => {
+    updateButtonsState(proposal?.id, true);
+  }, [fetchedProposalId])
 
 	return (
     <div id="FormaControls" className="col-md-12">
-      <div id="hubSelectorContainer" className="col-md-12">
-        <label>Select a hub:</label>
-        <WeaveSelect 
-          id="workspace-select"
-          value={workspaces && workspaces.length > 0 ? workspaces[0].id : ""}
-          class="fetchSelect"
-          onChange={handleWorkspaceSelectChange.bind(this)}>
-          { 
-            workspaces?.map(({ id, name }) => (
-              <WeaveSelectOption 
-              value={id} 
-              key={id}
-              selected={workspaces[0].id == id}
-              class="fetchSelectOption">
-              {name}</WeaveSelectOption>
-            ))
-          }
-        </WeaveSelect>
-      </div>
-    
       <div id="working-container" className="hidden">
-        <img id="working-screen"
-            src="assets/favicon.svg" 
-            width="115" height="115">
-        </img>
-        <label>Fetching from Forma...</label>
-      </div>
-      <div id="plugin-container" className="plugin">
-        <div id="plugin-content">
-          <ProjectList 
-            projects={projects}
-            projectSelectionHandler={setSelectedProjectId}
-            proposalSelectionHandler={setSelectedProposalId}
-            selectedProjectId={project?.projectId}
-            selectedProposalId={proposal?.proposalId}>
-          </ProjectList>
-          <div id="action">
-            <button className="st blue disabled" id="load-btn" onClick={onLoadClick}>Fetch from Forma</button> 
-            <button className="st gray disabled" id="sync-btn" onClick={onSyncClick}>Send to Forma</button>  
-          </div>
+          <img id="working-screen"
+              src="assets/favicon.svg" 
+              width="115" height="115">
+          </img>
+          <label>Fetching from Forma...</label>
         </div>
-        <label id="message" className={statusType}>{statusMessage}</label>   
+      <div id="projectList" className="col-md-12">
+        <div id="hubSelectorContainer" className="col-md-12">
+          <label>Select a hub:</label>
+          <WeaveSelect 
+            id="workspace-select"
+            value={workspaces && workspaces.length > 0 ? workspaces[0].id : ""}
+            class="fetchSelect"
+            onChange={handleWorkspaceSelectChange.bind(this)}>
+            { 
+              workspaces?.map(({ id, name }) => (
+                <WeaveSelectOption 
+                value={id} 
+                key={id}
+                selected={workspaces[0].id == id}
+                class="fetchSelectOption">
+                {name}</WeaveSelectOption>
+              ))
+            }
+          </WeaveSelect>
+        </div>
+        <div id="plugin-container" className="plugin">
+          <div id="plugin-content">
+            <ProjectList 
+              projects={projects}
+              projectSelectionHandler={setSelectedProjectId}
+              proposalSelectionHandler={setSelectedProposalId}
+              selectedProjectId={project?.projectId}
+              selectedProposalId={proposal?.proposalId}>
+            </ProjectList>
+          </div>
+          <label id="message" className={statusType}>{statusMessage}</label>   
+        </div>
+      </div>
+
+      <div id="selectedProposal" className="col-md-12">
+        <SelectedProposal 
+          proposal={proposal}
+          project={project}
+          selectedProposalId={proposal?.proposalId}
+          fetchSelectionHandler={onLoadClick}
+          syncSelectionHandler={onSyncClick}
+          backHandler={onBackClick}>
+        </SelectedProposal>
       </div>
     </div>
 	);

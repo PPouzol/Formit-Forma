@@ -31,7 +31,6 @@ function ProposalList(props: Props) {
                 key={proposal.proposalId}
                 proposal={proposal}
                 proposalSelectionHandler={proposalSelectionHandler}
-                isSelected={proposal.proposalId === selectedProposalId}
               />
             )) 
           }
