@@ -29,7 +29,8 @@ function FormItForma() {
           filledObj.Fill(e.id, e.name, e.version, e.metadata, e.urn);
           return filledObj;
         });
-        setWorkspaces(workspaces)
+        setWorkspaces(workspaces);
+
         if(workspaces.length > 0)
         {
           // only for very first call, do not fill the project and proposal again or it may override the currently selected workspace's.
@@ -140,6 +141,13 @@ function FormItForma() {
 
     handleFetchValues(FormaService.getProjects(workspaceId), 
       handleProjectsFetchedValues.bind(this));
+  }
+
+  function handleWorkspaceSelectClick() {
+    if(!project) {
+      handleFetchValues(FormaService.getWorkspaces(), 
+        handleWorkspacesFetchedValues.bind(this));
+    }
   }
 
   function handleWorkspaceSelectChange()  {
@@ -441,8 +449,8 @@ function FormItForma() {
   }
 
   // workspaces
-  const [workspaceId, setCurrentWorkspace] = useState<string>(null)
   const [workspaces, setWorkspaces] = useState<fetchResultObj[]>()
+  const [workspaceId, setCurrentWorkspace] = useState<string>(null)
   // projects
   const [project, setCurrentProject] = useState<Project>(null)
   const [projects, setProjects] = useState<Project[]>()
