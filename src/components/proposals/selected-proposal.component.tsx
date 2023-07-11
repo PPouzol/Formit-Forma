@@ -15,9 +15,10 @@ interface Props {
 
 function SelectedProposal(props: Props) {
   const { proposal, project, selectedProposalId, fetchSelectionHandler, syncSelectionHandler, backHandler } = props;
+
   return (
     <>
-      <ProposalS.BackLabel onClick={backHandler}>&lt;&nbsp;&nbsp;Back</ProposalS.BackLabel>
+      <ProposalS.BackLabel id="selected-prop-back" onClick={backHandler}>&lt;&nbsp;&nbsp;Back</ProposalS.BackLabel>
       <div data-checkly="ProposalList" className="select-proposal-list">
         <ProposalS.ListContainer>
           <ProposalComponent
@@ -32,6 +33,7 @@ function SelectedProposal(props: Props) {
         <button className="st blue disabled" id="load-btn" onClick={fetchSelectionHandler}>Fetch from Forma</button> 
         <button className="st gray hidden" id="sync-btn" onClick={syncSelectionHandler}>Send to Forma</button>  
       </div>
+      <label id="lblNewContent" className="hidden">New content added</label>
     </>
   );
 }

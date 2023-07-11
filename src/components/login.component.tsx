@@ -1,7 +1,8 @@
 import { Component } from "react";
 import formitFormaService from "../services/formit-forma.service";
 
-type Props = {};
+type Props = {
+};
 
 type State = {
   loggedIn: boolean
@@ -16,8 +17,8 @@ export default class Login extends Component<Props, State> {
     };
   }
 
-  static login(): ((this: GlobalEventHandlers, ev: MouseEvent) => any) | null {
-    formitFormaService.accessSpacemaker(false);
+  static login(region): ((this: GlobalEventHandlers, ev: MouseEvent) => any) | null {
+    formitFormaService.accessSpacemaker(false, region);
     return null;
   }
   

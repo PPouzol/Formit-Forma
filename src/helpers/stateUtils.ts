@@ -8,7 +8,8 @@ type InitialState = {
     synced: boolean,
     terrainElevationTransf3d: any,
     rootUrn: string,
-    loadedIntegrate: string[]
+    loadedIntegrate: string[],
+    initialDeltaId: number
 }
 
 const initialState: InitialState = {
@@ -16,7 +17,8 @@ const initialState: InitialState = {
     synced: false,
     terrainElevationTransf3d: null,
     rootUrn: DUMMY_ROOT_URN,
-    loadedIntegrate: []
+    loadedIntegrate: [],
+    initialDeltaId: -1
 }
 
 export const { useGlobalState, setGlobalState } = createGlobalState(initialState)
