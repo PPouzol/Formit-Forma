@@ -1,12 +1,24 @@
 
 import { ElementResponse } from "@spacemakerai/element-types"
 
-const API_URL = 'https://local.autodeskforma.eu:3001';
-const SPACEMAKER_URL = 'https://app.spacemaker.ai';
-
 class FormaService {
+  public API_URL: string = '';
+
+  setRegionUrl(region) {
+    if(region !== "us")
+    {
+      this.API_URL = 'https://app.autodeskforma.eu';
+    }
+    else
+    {
+      this.API_URL = 'https://app.autodeskforma.com';
+    }
+    //TODO for local debug, uncomment the following line
+    this.API_URL = 'https://local.autodeskforma.eu:3001';
+  }
+
   getWorkspaces() {
-    return fetch(`${API_URL}/api/workspaces`)
+    return fetch(`${this.API_URL}/api/workspaces`)
     .then(res => {
       if (!res.ok) {
         throw new Error(res.statusText);
@@ -16,7 +28,7 @@ class FormaService {
   }
 
   getProjects(customerId: string) {
-    return fetch(`${API_URL}/api/projects?customer=${customerId}&include_archived=false`)
+    return fetch(`${this.API_URL}/api/projects?customer=${customerId}&include_archived=false`)
     .then(res => {
       if (!res.ok) {
         throw new Error(res.statusText);
@@ -26,7 +38,7 @@ class FormaService {
   }
   
   countProposals(projectId: string) {
-    return fetch(`${API_URL}/api/proposal/elements/count?authcontext=${projectId}`)
+    return fetch(`${this.API_URL}/api/proposal/elements/count?authcontext=${projectId}`)
     .then(res => {
       if (!res.ok) {
         throw new Error(res.statusText);
@@ -37,7 +49,7 @@ class FormaService {
 
   
   getProposals(projectId: string) {
-    return fetch(`${API_URL}/api/proposal/elements?authcontext=${projectId}&version=2`)
+    return fetch(`${this.API_URL}/api/proposal/elements?authcontext=${projectId}&version=2`)
     .then(res => {
       if (!res.ok) {
         throw new Error(res.statusText);
@@ -85,17 +97,21 @@ class FormaService {
   }
 
   FormatThumbnailUrl(projectId: string, urn: string) {
-    return `${API_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
+    if(!urn)
+    {
+      return '';
+    }
+    return `${this.API_URL}/api/thumbnails/v2/${urn}?size=170&authcontext=${projectId}&projectId=${projectId}`;
   }
   
   FormatConceptualWorkerUrl() {
-    return `${API_URL}/web-components/conceptual-design/conceptual-design-terrain-worker-initiator.mjs`
+    return `${this.API_URL}/web-components/conceptual-design/conceptual-design-terrain-worker-initiator.mjs`
   }
 
   fetchRawDatas(url: string) {
     if(url.indexOf('/') === 0)
     {
-      url = `${API_URL}${url}`
+      url = `${this.API_URL}${url}`
     }
     return fetch(url, {
       method: "GET",
@@ -109,7 +125,7 @@ class FormaService {
   getAsJson(url: string) {
     if(url.indexOf('/') === 0)
     {
-      url = `${API_URL}${url}`
+      url = `${this.API_URL}${url}`
     }
     return fetch(url, {
       method: "GET",

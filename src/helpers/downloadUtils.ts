@@ -92,6 +92,9 @@ export async function getUrlAndLoad(elementResponseMap, proposalElement, proposa
       addTerrainToLayer(terrainObj)
         .then(async () => {
           fixObjectsElevation(terrainObj, createdObjs, proposal.projectId)
+          
+          const previousDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(typesAndConsts.MAIN_HISTORY_ID);
+          setGlobalState("initialDeltaId", previousDelta);
         })
     })
   }

@@ -12,13 +12,13 @@ export const Container = styled.div`
     position: relative;
     text-decoration: none;
     display: block;
+    width: 90%;
 `;
 
 export const Content = styled.div`
-    width: 175px;
-    border-radius: 4px;
+    width: 220px;
     padding: 5px 5px 5px 5px;
-    margin: 0rem 1.0rem .5rem 2.0rem;
+    margin: 0rem 1.0rem .5rem 0rem;
     opacity: 1;
     background-color: 1;
     transition: box-shadow 100ms linear 0s;
@@ -39,7 +39,6 @@ export const ThumbnailContainer = styled.div`
     custor: pointer;
     height: 56px;
     width: 56px;
-    border-radius: 4px;
     background-size: cover;
     background-color: white;
     background-position: center center;
@@ -114,3 +113,9 @@ export const SubTitle = styled.div`
     overflow: visible;
     text-align: left;
 `;
+
+export const BackLabel = styled.label`
+    color: rgb(96, 145, 207);
+    padding-bottom: 20px;
+    margin-right: auto;
+`

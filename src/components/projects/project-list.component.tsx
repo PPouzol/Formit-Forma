@@ -25,30 +25,12 @@ function ProjectList(props: Props) {
   }
 
   function changeSelectedProject(projectId) {
-    // remove selected classname from any previously selected project
-    const allElements = document.querySelectorAll('.project.selected');
-    allElements.forEach((element) => {
-      element.classList.remove('selected');
-    });
-
-    const allProposalsElements = document.querySelectorAll('.visible');
-    allProposalsElements.forEach((proposal) => {
-      proposal.classList.remove('visible');
-      proposal.classList.add('hidden');
-    });
-
     // change selected proposal
     changeSelectedProposal("")
-    
     projectSelectionHandler(projectId);
   }
 
   function changeSelectedProposal(proposalId) {
-    const allElements = document.querySelectorAll('.proposal.selected');
-    allElements.forEach((element) => {
-      element.classList.remove('selected');
-    });
-
     proposalSelectionHandler(proposalId);
   }
 

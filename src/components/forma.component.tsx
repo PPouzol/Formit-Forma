@@ -8,6 +8,9 @@ import FormItFormaService from "../services/formit-forma.service";
 import { retrieveProposalElements } from "../helpers/saveUtils"
 import useLoadConceptualWebWorker from "../helpers/useLoadConceptualWebWorker"
 import { setGlobalState, useGlobalState } from "../helpers/stateUtils"
+import { MAIN_HISTORY_ID } from "../helpers/typesAndConstants";
+import { WeaveSelect, WeaveSelectOption } from "./hub-selector/FormaComponents";
+import SelectedProposal from "./proposals/selected-proposal.component";
 
 function FormItForma() {  
   function handleFetchValues(fetchFunction: Promise<any>, handleResults: (value: any) => any | null | undefined)  {
@@ -19,13 +22,8 @@ function FormItForma() {
   function handleWorkspacesFetchedValues(results: any) {
     try {
       let haveValues = results !== null && (results as Array<any>).length > 0;
-      document.getElementById("message")!.style.display = haveValues ? "block" : "none";
       if(haveValues)
       {
-        if(!synced) {
-          setMessageType("info");
-          setMessage("");
-        }
         let workspaces = results.map((e: any) => {
           var filledObj = new fetchResultObj();
           filledObj.Fill(e.id, e.name, e.version, e.metadata, e.urn);
@@ -42,12 +40,14 @@ function FormItForma() {
             setCurrentWorkspace(workspaces[0].id);
             fillWorkspaceProjects(workspaces[0].id);
           }
+          else {
+            fillWorkspaceProjects(workspaceId);
+          }
         }
       }
     } catch (error) {
       const errorTxt = "Unable to read workspaces";
-      setMessageType("error");
-      setMessage(errorTxt);
+      FormIt.UI.ShowNotification(errorTxt, FormIt.NotificationType.Error, 5000);
       throw new Error(errorTxt);
     }
   }
@@ -64,19 +64,16 @@ function FormItForma() {
           let nowTime = new Date().getTime();
           let creationTimeDiff = nowTime - e.created;
           let dayCount = Math.floor(creationTimeDiff / (1000*24*60*60));
+          filledObj.createdSince = dayCount;
           filledObj.creationTime = dayCount == 0 ? `Today` : `${dayCount} days ago`;
           return filledObj;
-        });
+        })
+        .sort((a,b) => (a.createdSince > b.createdSince) ? 1 : ((b.createdSince > a.createdSince) ? -1 : 0));
 
       await fillProposals(projectsResults);
-      if(!synced) {
-        setMessageType("info");
-        setMessage("");
-      }
     } catch (error) {
       const errorTxt = "Unable to read projects from selected workspace";
-      setMessageType("error");
-      setMessage(errorTxt);
+      FormIt.UI.ShowNotification(errorTxt, FormIt.NotificationType.Error, 5000);
       throw new Error(errorTxt);
     }
   }
@@ -113,14 +110,6 @@ function FormItForma() {
                   // currently selected proposal match this entry. 
                   // should be updated to get last urn with revision
                   setCurrentProposal(proposalEntry);
-                            
-                  if(synced)
-                  {
-                    retrieveProposalElements(project.projectId, proposal.proposalId)
-                      .then((proposalElement) => {
-                        elementResponseMap[proposalElement.urn] = proposalElement
-                      });
-                  }
                 }
               }
                             
@@ -139,22 +128,16 @@ function FormItForma() {
           });
         }
         setProjects(projectsResults);
-
-        if(!synced) {
-          setMessageType("info");
-          setMessage("");
-        }
         hideShowLoading(false);
     } catch (error) {
       const errorTxt = "Unable to read proposals from projects";
-      setMessageType("error");
-      setMessage(errorTxt);
+      FormIt.UI.ShowNotification(errorTxt, FormIt.NotificationType.Error, 5000);
       throw new Error(errorTxt);
     }
   }
 
   function fillWorkspaceProjects(workspaceId) {
-    hideShowLoading(true);
+    hideShowLoading(true, "Retrieving workspaces from Forma...");
 
     handleFetchValues(FormaService.getProjects(workspaceId), 
       handleProjectsFetchedValues.bind(this));
@@ -171,6 +154,7 @@ function FormItForma() {
     let workspaceSelect = (document.getElementById("workspace-select")) as HTMLSelectElement;
     if(workspaceSelect !== null)
     {
+      setCurrentWorkspace(workspaceSelect.value);
       fillWorkspaceProjects(workspaceSelect.value);
     }
   }
@@ -191,13 +175,11 @@ function FormItForma() {
         setCurrentProject(null);
       }
     }
-    updateButtonsState("");
   }
 
-  async function setSelectedProposalId(newProposalId) {
-    if(proposal !== null && proposal?.proposalId === newProposalId) {
-      setCurrentProposal(null);
-      newProposalId = "";
+  async function setSelectedProposalId(newProposalId, fromBackAction) {
+    if(fromBackAction) {      
+      hideShowSelected(false);
     }
     else {
       if(project !== null) {
@@ -211,6 +193,8 @@ function FormItForma() {
             .then((proposalElement) => {
               elementResponseMap[proposalElement.urn] = proposalElement
             });
+
+          hideShowSelected(true);
         }
         else {
           setCurrentProposal(null);
@@ -220,7 +204,23 @@ function FormItForma() {
         setCurrentProposal(null);
       }
     }
-    updateButtonsState(newProposalId);
+
+    if(newProposalId) {
+      updateButtonsState(newProposalId);
+    }
+  }
+
+  function hideShowSelected(showProposal) {
+    let projectListContainer = document.getElementById("projectList");
+    let selectedProposalContainer = document.getElementById("selectedProposal");
+    if(showProposal) {
+      projectListContainer.style.display = "none";
+      selectedProposalContainer.style.display = "flex";
+    }
+    else {
+      projectListContainer.style.display = "flex";
+      selectedProposalContainer.style.display = "none";
+    }
   }
 
   async function updateButtonsState(proposalId) {
@@ -231,53 +231,70 @@ function FormItForma() {
     if(syncButton !== null)
     {
       let button = (syncButton as HTMLButtonElement);
-      let disabled = !idsProvided;
-      button.disabled = disabled;
-      if(!disabled)
+      if(button)
       {
-        button.classList.remove('disabled');
-      }
-      else if(!button.classList.contains('disabled'))
-      {
-        button.classList.add('disabled');
+        let disabled = fetchedProposalId != proposalId;
+        button.disabled = disabled;
+        // sync button is not disabled, but hidden
+        if(!disabled)
+        {
+          button.classList.remove('hidden');
+        }
+        else if(!button.classList.contains('hidden'))
+        {
+          button.classList.add('hidden');
+        }
       }
     }   
     
     if(loadButton !== null)
     {
       let button = (loadButton as HTMLButtonElement);
-      let disabled = !idsProvided;
-      button.disabled = disabled;
-      if(!disabled)
+      if(button)
       {
-        button.classList.remove('disabled');
-      }
-      else if(!button.classList.contains('disabled'))
-      {
-        button.classList.add('disabled');
+        let disabled = !idsProvided || (fetchedProposalId == proposalId);
+        button.disabled = disabled;
+        if(!disabled)
+        {
+          button.classList.remove('disabled');
+        }
+        else if(!button.classList.contains('disabled'))
+        {
+          button.classList.add('disabled');
+        }
       }
     }   
   }
+  
+  function hideShowLoading(show, message = "") {
+    setWorkingMessage(message)
 
-  function hideShowLoading(show) {
     let loadContainer = document.getElementById("working-container");
     let plugContainer = document.getElementById("plugin-container");
+    let proposalContainer = document.getElementById("selectedProposal");
+    let hubSelector = document.getElementById("hubSelectorContainer");
     if(show) {
+      // hide possibly displayed empty container
+      let emptyContainer = document.getElementById("empty-list");
+      if(emptyContainer)
+      {
+        emptyContainer.style.display = "none";
+      }
       loadContainer.style.display = "flex";
       plugContainer.classList.add('disabled');
+      proposalContainer.classList.add('disabled');
+      hubSelector.classList.add('disabled');
     }
     else {
       loadContainer.style.display = "none";
       plugContainer.classList.remove('disabled');
+      proposalContainer.classList.remove('disabled');
+      hubSelector.classList.remove('disabled');
     }
   }
 
   async function onLoadClick() {
-    hideShowLoading(true);
-
-    let message = document.getElementById("message");
-    message.className = "info";
-    message.textContent = "Loading datas from Forma...";
+    hideShowLoading(true, "Fetching from Forma...");
 
     // to be reactived if we want to offer possibility to save current edits locally
     // let hasSomethingToSave = await FormIt.Model.IsModified();
@@ -303,55 +320,134 @@ function FormItForma() {
     FormItFormaService.fetchAndLoadElements(
       [],
       proposal,
-      (proposalId, elementResponseMap, loadedIntegrateElements) => {
-        setMessageType(proposalId ? "success" : "error");
-        setMessage(proposalId ? "Datas have been loaded from Forma" : "Loading failed");
-
+      async (proposalId, elementResponseMap, loadedIntegrateElements) => {
         hideShowLoading(false);
-    
+        
+        let type = proposalId ? FormIt.NotificationType.Success : FormIt.NotificationType.Error;
+        let message = proposalId ? "Datas have been loaded from Forma" : "Loading failed";
+
+        FormIt.UI.ShowNotification(message, type, 5000);
+
         setGlobalState("elements", elementResponseMap);
         setGlobalState("loadedIntegrate", loadedIntegrateElements);
-        
+
         setSync(false);
+
+        if(proposalId)
+        {
+          FormIt.View.FitToSelection();
+
+          debugger
+          
+          let message = `Successfully fetched data from Forma.`;
+          FormIt.UI.ShowNotification(message, FormIt.NotificationType.Success, 5000);
+
+          const delay = ms => new Promise(res => setTimeout(res, ms));
+          const displayOSM = async () => {
+            await delay(5000);
+            // display open streetmap attribution
+            message = `Map data from OpenStreetMap® 2023-03-09T13:48:28.962000Z.
+            https://www.openstreetmap.org/copyright`;
+            FormIt.UI.ShowNotification(message, FormIt.NotificationType.Information, 5000);
+          };
+          displayOSM();
+          setFetch(proposalId);
+          
+          const currentDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(MAIN_HISTORY_ID);
+          setInitialDelta(currentDelta);
+        }
+        else
+        {
+          let message = `Fetched data from Forma failed.`;
+          FormIt.UI.ShowNotification(message, FormIt.NotificationType.Error, 5000);
+        }
       }
     );
+  }
+
+  function onBackClick() {
+    setSelectedProposalId(proposal.id, true);
+  }
+
+  function onRefreshHubsClick() {
+    handleFetchValues(FormaService.getWorkspaces(), 
+      handleWorkspacesFetchedValues.bind(this));
   }
 
   function onSyncClick() {
     let container = document.getElementById("projectlist-container");
     container.classList.add('disabled');
-    let message = document.getElementById("message");
-    message.className = "info";
-    message.textContent = "Sending datas to Forma...";
     let projectId = project.projectId;
+    hideShowLoading(true, "Sending datas to Forma...");
 
-    FormItFormaService.save(
+    // updated current elementResponseMap before syncing to forma, to ensure we have the last revisions in the urn
+    retrieveProposalElements(project.projectId, proposal.id)
+      .then((proposalElement) => {
+        elementResponseMap[proposalElement.urn] = proposalElement;
+        proposal.urn = proposalElement.urn;
+      })
+      .then(() => {
+        FormItFormaService.save(
+          {
+            projectId,
+            proposal,
+            elementResponseMap,
+            terrainElevationTransf3d,
+            loadedIntegrateElements
+          }, 
+          (result) => {
+            setSync(true);
+            if(result && (typeof result === 'string' || result instanceof String))
+            {
+              FormIt.UI.ShowNotification(`Synchronization failed: ${result}`, FormIt.NotificationType.Error, 5000);
+            }
+            else
+            {
+              let type = result ? FormIt.NotificationType.Success : FormIt.NotificationType.Error;
+              let message = result ? "Datas have been synchronized successfully on Forma" : "Synchronization failed";
+      
+              FormIt.UI.ShowNotification(message, type, 5000);
+            }
+            container.classList.remove('disabled');
+            hideShowLoading(false);
+          }
+        );
+      })
+  }
+
+  async function updateNewContent() {
+    let newContent = document.getElementById("lblNewContent");
+    const currentDelta = await WSM.APIGetIdOfActiveDeltaReadOnly(MAIN_HISTORY_ID);
+    if(newContent && currentDelta != WSM.INVALID_ID) {
+      if(initialDeltaId === -1) {
+        // once terrain will be fully loaded, delta will increase by two
+        setInitialDelta(currentDelta + 2);
+        let refreshId = setInterval(updateNewContent,  5000);
+        if(refreshIntervalId === -1) {
+          setRefreshIntervalId(refreshId);
+        }
+      }
+      else
       {
-        projectId,
-        proposal,
-        elementResponseMap,
-        terrainElevationTransf3d,
-        loadedIntegrateElements
-      }, 
-      (result) => {
-        setSync(true);
-        if(result && (typeof result === 'string' || result instanceof String))
-        {
-          setMessageType("error");
-          setMessage(`Synchronization failed: ${result}`);
+        const contentAdded = initialDeltaId < currentDelta;
+        if(contentAdded) {
+          clearInterval(refreshIntervalId);
+          newContent.classList.remove('hidden');
         }
         else
         {
-          setMessageType(result ? "success" : "error");
-          setMessage(result ? "Datas have been synchronized successfully on Forma" : "Synchronization failed");
+          newContent.classList.add('hidden');
         }
-        container.classList.remove('disabled');
       }
-    );
+    }
+    else
+    {
+      if(newContent) {
+        newContent.classList.add('hidden');
+      }
+    }
   }
 
-  const [statusMessage, setMessage] = useState("")
-  const [statusType, setMessageType] = useState("info")
   // workspaces
   const [workspaces, setWorkspaces] = useState<fetchResultObj[]>()
   const [workspaceId, setCurrentWorkspace] = useState<string>(null)
@@ -361,7 +457,12 @@ function FormItForma() {
   // proposals
   const [proposal, setCurrentProposal] = useState<Proposal>(null)
   // elements
+  const [fetchedProposalId, setFetch] = useState<string>("")
   const [synced, setSync] = useState(false)
+
+  const [workingMessage, setWorkingMessage] = useState<string>()
+  const [initialDeltaId, setInitialDelta] = useState<number>(-1)
+  const [refreshIntervalId, setRefreshIntervalId] = useState<number>(-1)
 
   const [elementResponseMap] = useGlobalState("elements");
   const [loadedIntegrateElements] = useGlobalState("loadedIntegrate");
@@ -382,55 +483,74 @@ function FormItForma() {
     }  
   }, [])
   
+  if(!workspaceId)  {
+    handleFetchValues(FormaService.getWorkspaces(), 
+      handleWorkspacesFetchedValues.bind(this));
+  }
+
+  //updateNewContent();
+
   // get workspaces from API
   useEffect(() => {
-    if(!synced) {
-      if(!workspaceId)
-      {
-        handleFetchValues(FormaService.getWorkspaces(), 
-          handleWorkspacesFetchedValues.bind(this));
-      }
-      fillWorkspaceProjects(workspaceId);
-    }
-  }, [synced])
+    updateButtonsState(proposal?.id);
+  }, [fetchedProposalId])
 
 	return (
     <div id="FormaControls" className="col-md-12">
       <div id="working-container" className="hidden">
-        <img id="working-screen"
-            src="assets/favicon.svg" 
-            width="115" height="115">
-        </img>
-        <label>Fetching from Forma...</label>
-      </div>
-      <div id="plugin-container" className="plugin">
-        <div id="plugin-content">
-          <select id="workspace-select" 
-              className="fetchSelect" 
-              onClick={handleWorkspaceSelectClick.bind(this)}
-              onChange={handleWorkspaceSelectChange.bind(this)}
-              defaultValue={""}
-              //hidden
-            >
+          <img id="working-screen"
+              src="assets/favicon.svg" 
+              width="115" height="115">
+          </img>
+          <label>{workingMessage}</label>
+        </div>
+      <div id="projectList" className="col-md-12">
+        <div id="hubSelectorContainer" className="col-md-12">
+          <label>Select a hub:</label>
+          <div id="hubSelect" className="col-md-12">
+            <WeaveSelect 
+              id="workspace-select"
+              value={workspaces && workspaces.length > 0 ? workspaces[0].id : ""}
+              class="fetchSelect"
+              onChange={handleWorkspaceSelectChange.bind(this)}>
               { 
                 workspaces?.map(({ id, name }) => (
-                  <option value={id} key={id}>{name}</option>
+                  <WeaveSelectOption 
+                  value={id} 
+                  key={id}
+                  selected={workspaces[0].id == id}
+                  class="fetchSelectOption">
+                  {name}</WeaveSelectOption>
                 ))
               }
-          </select>
-          <ProjectList 
-            projects={projects}
-            projectSelectionHandler={setSelectedProjectId}
-            proposalSelectionHandler={setSelectedProposalId}
-            selectedProjectId={project?.projectId}
-            selectedProposalId={proposal?.proposalId}>
-          </ProjectList>
-          <div id="action">
-            <button className="st blue disabled" id="load-btn" onClick={onLoadClick}>Fetch from Forma</button> 
-            <button className="st gray disabled" id="sync-btn" onClick={onSyncClick}>Send to Forma</button>  
+            </WeaveSelect>
+            <img id="refresh-btn"
+                onClick={onRefreshHubsClick.bind(this)}>
+            </img>
           </div>
         </div>
-        <label id="message" className={statusType}>{statusMessage}</label>   
+        <div id="plugin-container" className="plugin">
+          <div id="plugin-content">
+            <ProjectList 
+              projects={projects}
+              projectSelectionHandler={setSelectedProjectId}
+              proposalSelectionHandler={setSelectedProposalId}
+              selectedProjectId={project?.projectId}
+              selectedProposalId={proposal?.proposalId}>
+            </ProjectList>
+          </div>
+        </div>
+      </div>
+
+      <div id="selectedProposal" className="col-md-12">
+        <SelectedProposal 
+          proposal={proposal}
+          project={project}
+          selectedProposalId={proposal?.proposalId}
+          fetchSelectionHandler={onLoadClick}
+          syncSelectionHandler={onSyncClick}
+          backHandler={onBackClick}>
+        </SelectedProposal>
       </div>
     </div>
 	);

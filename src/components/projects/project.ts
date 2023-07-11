@@ -4,6 +4,7 @@ import Proposal from "../proposals/proposal"
 export default class Project extends fetchResultObj {
     public projectId: string;
     public newestProposalId: string;
+    public createdSince: number;
     public creationTime: string;
     public proposalCount: number;
     public proposals: Proposal[];
@@ -16,6 +17,7 @@ export default class Project extends fetchResultObj {
         this.newestProposalId = "";
         this.creationTime = "";
         this.proposalCount = 0;
+        this.createdSince = 0;
     }
 } 
   

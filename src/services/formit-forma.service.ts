@@ -28,7 +28,7 @@ class FormaSaveService {
       })[0] || null;
   }
   
-  accessSpacemaker(fromWeb)
+  accessSpacemaker(fromWeb, region)
   {
     let loginDialog = null;
     if(fromWeb)
@@ -50,9 +50,9 @@ class FormaSaveService {
     else
     {
       //const baseUrl = "https%3A%2F%2Fapp.spacemaker.ai%2Fprojects";
-      const baseUrl = "https://local.autodeskforma.eu:3001";
-      const returnUrl = `${baseUrl}?loggedIn=1`;
-      window.location.replace(`https://app.autodeskforma.eu/auth/login?rd=${returnUrl}`);
+      const baseUrl = `https://local.autodeskforma.eu:3001`;
+      const returnUrl = `${baseUrl}?region=${region}`;
+      window.location.replace(`https://app.autodeskforma.${region}/auth/login?rd=${returnUrl}`);
     }
   }
   
@@ -68,11 +68,7 @@ class FormaSaveService {
     elementResponseMap: ElementResponse,
     terrainElevationTransf3d: any,
     loadedIntegrateElements: string[]
-  }, callback: any) {  
-    const hasSomethingToSave = await FormIt.Model.IsModified();
-    if(!hasSomethingToSave)
-      return;
-      
+  }, callback: any) {       
     this.beforeSaveLayerHandling()
       .then(async() => {
         hideLayersBeforeSave()
@@ -119,11 +115,11 @@ class FormaSaveService {
       if (nType === WSM.nObjectType.nBodyType || nType === WSM.nObjectType.nMeshType) {
         aBodiesAndMeshes.push(nObjID)
       } else if (
-        nType === WSM.nFaceType ||
-        nType === WSM.nEdgeType ||
-        nType === WSM.nVertexType ||
-        nType === WSM.nLineMeshType ||
-        nType === WSM.nPointMeshType
+        nType === WSM.nObjectType.nFaceType ||
+        nType === WSM.nObjectType.nEdgeType ||
+        nType === WSM.nObjectType.nVertexType ||
+        nType === WSM.nObjectType.nLineMeshType ||
+        nType === WSM.nObjectType.nPointMeshType
       ) {
         aOtherForInstance.push(nObjID)
       }
@@ -269,6 +265,12 @@ class FormaSaveService {
                 });
             });
     }
+  }
+  
+  leaveSpacemaker()
+  {
+    let loginUrl = 'https://local.autodeskforma.eu:3001/';
+    window.location.replace(loginUrl);
   }
 }
 

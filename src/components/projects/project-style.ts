@@ -4,7 +4,7 @@ export const ListContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 255px;
+    width: 98%;
     overflow: hidden;
 `;
 
@@ -19,11 +19,10 @@ export const Container = styled.div`
 // `
 
 export const Content = styled.div`
-    width: 175px;
+    width: 220px;
     min-height: 158px;
-    border-radius: 4px;
     padding: 5px 5px 5px 5px;
-    margin: 0rem 1.0rem .5rem 2.0rem;
+    margin: 0rem .1rem .5rem .1rem;
     opacity: 1;
     background-color: 1;
     transition: box-shadow 100ms linear 0s;
@@ -58,8 +57,7 @@ export const SpanDescription = styled.span`
 export const ThumbnailContainer = styled.div`
     custor: pointer;
     height: 115px;
-    width: 115px;
-    border-radius: 4px;
+    width: 65%;
     background-size: cover;
     background-color: white;
     background-position: center center;
@@ -81,11 +79,11 @@ export const Thumbnail = styled.div`
 
 export const InfosColumn = styled.div`
     display: flex;
+    width: 60px;
     flex-direction: column;
     margin: 0rem .1rem 0rem .4rem;
     padding: 0px .2em 0px .5em;
-    border: 1.5px solid rgb(233, 234, 236);
-    border-radius: 4px;
+    border: 1.5px solid rgb(150, 150, 150);
     align-items: center;
     justify-content: center;
 `;

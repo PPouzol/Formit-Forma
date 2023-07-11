@@ -45,12 +45,31 @@ h4 {
 
 #MainControls, #AppControls{
   text-align: left;
-  border-top: solid 1px lightsteelblue;
 }
 
 #FormaControls {
   text-align: center;
-  border-top: solid 1px lightsteelblue;
+  border-top: solid 1px lightgray;
+}
+
+#hubSelectorContainer {
+  text-align: left;
+  margin-top: 20px;
+  border-bottom: solid 1px lightgray;
+  display: flex;
+  flex-direction: column;
+}
+
+#hubSelect {
+  display: flex;
+  flex-direction: row;
+}
+
+.fetchSelect{
+  width: 250px;
+  margin-bottom: 25px;
+  margin-top: 15px;
+  z-index: 1;
 }
 
 #MainControls a{
@@ -81,11 +100,18 @@ h4 {
   margin: 5px 0px 0px 5px;
 }
 
-#sync-btn{
+#sync-btn {
   background-color:  rgb(131, 129, 129);
   color: white;
   width:100%;
   margin: 5px 0px 0px 5px;
+}
+
+#refresh-btn {
+  margin: -10px 0px 0px 5px;
+  content: url("assets/refresh.png");
+  width: 20px;
+  height: 20px;
 }
 
 #working-container {
@@ -115,11 +141,6 @@ h4 {
   font-weight:bold;
   font-size:14px;
   background-color:lightyellow;
-}
-
-.fetchSelect{
-  width: 80%;
-  margin-bottom: 15px;
 }
 
 .noProjects{
@@ -164,4 +185,35 @@ h4 {
 
 .st {
   margin-right: 10px;
+}
+
+#working-container {
+  position: absolute;
+  color: rgb(133, 131, 131);
+  width: 90%;
+  height: 80%;
+  
+  display: none; 
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#region-selector {
+  display: flex;
+  flex-direction: row-reverse;
+  color: rgb(155, 155, 155);
+}
+
+label {
+  margin-right: 5px;
+}
+
+.region:hover {
+  border-bottom: 2px solid rgb(155, 155, 155);
+} 
+
+.chosen {
+  border-bottom: 3px solid #4676a9 !important;
+  padding-bottom: 3px;
 }
