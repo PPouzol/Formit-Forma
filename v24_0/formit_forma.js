@@ -50,3 +50,10 @@ FormIt.FormaAddIn.DeleteTempFile = function(aPath) {
     };
     return callAsyncAPI(args);
 };
+
+FormIt.FormaAddIn.ShowUnsavedChanged = function() {
+    args = {
+        TestAPI: "FormIt.FormaAddIn.ShowUnsavedChanged"
+    };
+    return callAsyncAPI(args);
+};
